@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+  name: test-service
+  namespace: default
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+  type: LoadBalancer
+
+
+
+
+
+  

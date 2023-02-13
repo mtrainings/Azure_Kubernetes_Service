@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: test-egress
+  namespace: default
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+  type: LoadBalancer
+
+
+  
