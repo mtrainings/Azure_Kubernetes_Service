@@ -2,4 +2,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Content
-* [Basic LoadBalancer (Static IP Address)](Basic_LoadBalancerStaticIP/README.md)
+* [Basic LoadBalancer](Basic_LoadBalancer/README.md)
+* [Standard LoadBalancer ](Standard_LoadBalancer/README.md)

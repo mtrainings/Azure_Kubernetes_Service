@@ -1,9 +1,9 @@
-# Basic External Load Balancer with dynamic IP address
+# Standard External Load Balancer
 
 ## Requirements:
 
 * AKS Cluster
-* Basic External LoadBalancer
+* Standard External LoadBalancer
 * Virtual Machine in Azure.
 
 #### Create Resource group
@@ -21,6 +21,8 @@ az ad sp create-for-rbac --skip-assignment -n "spn-aks"
 
 #### Create Azure Kubernetes Service
 
+> **_NOTE:_** We need to change --subscription, --service-principal, --client-secret
+
 ```bash
 az aks create \
   --location westeurope \
@@ -31,7 +33,7 @@ az aks create \
   --service-principal "00000000-0000-0000-0000-000000000000" \
   --client-secret "00000000-0000-0000-0000-000000000000" \
   --network-plugin kubenet \
-  --load-balancer-sku basic \
+  --load-balancer-sku standard \
   --outbound-type loadBalancer \
   --node-vm-size Standard_B2s \
   --node-count 1 \
