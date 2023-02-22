@@ -3,7 +3,7 @@
 
 ## Content
 * [Basic LoadBalancer](Basic_LoadBalancer/README.md)
-* [Standard LoadBalancer](Standard_LoadBalancer/README.md)
+* [Standard LoadBalancer](Standard_Loadbalancer/README.md)
 * [Traffic from internet](Traffic_from_internet/README.md)
 * [External Nginx Ingress Controller + Cert Manager](External_Nginx_Ingress_Controller_Cert_Manager/README.md)
 * [External Application Gateway Ingress Controller](External_ApplicationGateway_Ingress_Controller/README.md)
