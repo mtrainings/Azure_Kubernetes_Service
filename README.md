@@ -1,5 +1,6 @@
 # Kubernetes on Azure (AKS)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![alt text](images/1630686924911.png)
 
 ## Content
 * [Basic LoadBalancer](Basic_LoadBalancer/README.md)
