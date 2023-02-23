@@ -1,9 +1,4 @@
-# Traffic_from_internet
-
-## Requirements:
-
-* AKS Cluster
-* Basic External LoadBalancer
+# AKS_Authorization
 
 #### Create Resource group
 
@@ -40,44 +35,22 @@ az aks create \
 
 > **_NOTE:_** Now we have to wait a while until our cluster is created
 
-#### Get kubeconfig
+#### Generate kubeconfig (get-credentials) for admins
 ```bash
 az aks get-credentials \
   --resource-group demo-weu-rg \
   --name 1386e4a2-8f22-weu-aks \
+  --file ./386e4a2-8f22-weu-aks-admin.kubeconfig \
   --admin
 ```
 
-
-#### Create an ingress controller
-
+#### Generate kubeconfig (get-credentials) for users
 ```bash
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --version 4.1.3 --namespace ingress-nginx --create-namespace --set controller.replicaCount=1 --set controller.nodeSelector."kubernetes\.io/os"=linux --set controller.admissionWebhooks.patch.nodeSelector."kubernetes\.io/os"=linux --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux
+az aks get-credentials \
+  --resource-group demo-weu-rg \
+  --name 1386e4a2-8f22-weu-aks \
+  --file ./386e4a2-8f22-weu-aks-user.kubeconfig \
 ```
-#### Check the load balancer service
-
-```bash
-kubectl get services --namespace ingress-nginx -o wide -w ingress-nginx-controller
-```
-
-#### Deploy Application
-
-```bash
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
-kubectl apply -f ingress.yaml
-```
-
-## Testing
-
-#### Open URL from webbrowser
-
-1. http://IP-FROM-OUR-INGRESS/
-2. http://IP-FROM-OUR-INGRESS/hello-world-two
-3. http://IP-FROM-OUR-INGRESS/static
-
 
 #### CleanUP
 ```bash

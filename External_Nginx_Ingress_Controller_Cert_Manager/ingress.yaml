@@ -9,10 +9,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - 1386e4a2.westus.cloudapp.azure.com
+    - test1386e4a2.westeurope.cloudapp.azure.com
     secretName: quickstart-example-tls
   rules:
-  - host: 1386e4a2.westus.cloudapp.azure.com
+  - host: test1386e4a2.westeurope.cloudapp.azure.com
     http:
       paths:
       - path: /

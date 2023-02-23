@@ -10,8 +10,7 @@
 #### Create Resource group
 
 ```bash
-az group create --location westeurope \ 
-   --resource-group demo-weu-rg
+az group create --location westeurope --resource-group demo-weu-rg
 ```
 
 #### Create Service Principal
@@ -44,7 +43,6 @@ az aks create \
 > **_NOTE:_** Now we have to wait a while until our cluster is created
 
 #### Get kubeconfig
-
 ```bash
 az aks get-credentials \
   --resource-group demo-weu-rg \
@@ -52,45 +50,25 @@ az aks get-credentials \
   --admin
 ```
 #### Create Static IP address
-```
+```bash
 az network public-ip create \
     --resource-group MC_demo-weu-rg_1386e4a2-8f22-weu-aks_westeurope \
     --name myStandardPublicIP \
     --version IPv4 \
     --sku Standard \
-    --dns-name 1386e4a2
+    --dns-name test1386e4a2
 ```
 #### Create an ingress controller wtihs static IP
 
 ```bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 
-helm install nginx-ingress ingress-nginx/ingress-nginx \
-    --version 4.1.3 \
-    --namespace ingress-basic \
-    --create-namespace \
-    --set controller.replicaCount=2 \
-    --set controller.nodeSelector."kubernetes\.io/os"=linux \
-    --set controller.image.registry=$ACR_URL \
-    --set controller.image.image=ingress-nginx/controller \
-    --set controller.image.tag=v1.2.1 \
-    --set controller.image.digest="" \
-    --set controller.admissionWebhooks.patch.nodeSelector."kubernetes\.io/os"=linux \
-    --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
-    --set controller.admissionWebhooks.patch.image.registry=$ACR_URL \
-    --set controller.admissionWebhooks.patch.image.image=ingress-nginx/kube-webhook-certgen \
-    --set controller.admissionWebhooks.patch.image.tag=v1.1.1 \
-    --set controller.admissionWebhooks.patch.image.digest="" \
-    --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \
-    --set defaultBackend.image.registry=$ACR_URL \
-    --set defaultBackend.image.image=defaultbackend-amd64 \
-    --set defaultBackend.image.tag=1.5 \
-    --set defaultBackend.image.digest=""
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --version 4.1.3 --namespace ingress-nginx --create-namespace --set controller.replicaCount=1 --set controller.nodeSelector."kubernetes\.io/os"=linux --set controller.admissionWebhooks.patch.nodeSelector."kubernetes\.io/os"=linux --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux --set controller.service.loadBalancerIP=STATIC-IP-ADDRESS
 ```
 #### Check the load balancer service
 
 ```bash
-kubectl get services --namespace ingress-basic -o wide -w ingress-nginx-controller
+kubectl get services --namespace ingress-nginx -o wide -w ingress-nginx-controller
 ```
 
 #### Deploy certmanager
@@ -125,10 +103,36 @@ kubectl apply -f service.yaml
 kubectl apply -f ingress.yaml
 ```
 
+
+## Testing
+
 #### Check if SSL are created
 
 ```
-kubectl describe order quickstart-example-tls-889745041
-kubectl describe challenge quickstart-example-tls-889745041-0
-kubectl describe certificate quickstart-example-tls
+# get CertificateRequests
+kubectl get certificaterequest
+
+# see the state of the request
+kubectl describe certificaterequest some-certificaterequest-name
+
+# check the Order
+kubectl get order
+
+kubectl describe order some-order-name
+
+# check Challenge
+kubectl get challenge
+
+kubectl describe challenge some-challenge-name
+```
+
+#### Check if domain have proper SSL
+
+1. Open URL "https://test1386e4a2.westeurope.cloudapp.azure.com/" in browser and check SSL
+2. Go to https://www.sslshopper.com/ssl-checker.html and check domain test1386e4a2.westeurope.cloudapp.azure.com
+
+
+#### CleanUP
+```bash
+az group delete -n demo-weu-rg --yes --no-wait
 ```

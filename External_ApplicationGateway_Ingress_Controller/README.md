@@ -9,8 +9,7 @@
 #### Create Resource group
 
 ```bash
-az group create --location westeurope \ 
-   --resource-group demo-weu-rg
+az group create --location westeurope --resource-group demo-weu-rg
 ```
 
 #### Create Service Principal
@@ -43,7 +42,6 @@ az aks create \
 > **_NOTE:_** Now we have to wait a while until our cluster is created
 
 #### Get kubeconfig
-
 ```bash
 az aks get-credentials \
   --resource-group demo-weu-rg \
@@ -51,20 +49,51 @@ az aks get-credentials \
   --admin
 ```
 
-#### Create empty Application Gateway
+#### Create empty Application Gateway + VNET + SUBNET + IP
 
 ```
-az network public-ip create -g demo-weu-rg -n appgwpubip --allocation-method Static --location westeurope --sku standard
-az network application-gateway create --name k8sappgw --location westeurope --resource-group demo-weu-rg --sku WAF_v2 --http-settings-cookie-based-affinity Enabled --public-ip-address appgwpubip --vnet-name k8sVnet --subnet appGWSubnet
+az network vnet create \
+  --name myVNet \
+  --resource-group demo-weu-rg \
+  --location westeurope \
+  --address-prefix 10.21.0.0/16 \
+  --subnet-name myAGSubnet \
+  --subnet-prefix 10.21.0.0/24
+
+az network vnet subnet create \
+  --name myBackendSubnet \
+  --resource-group demo-weu-rg \
+  --vnet-name myVNet   \
+  --address-prefix 10.21.1.0/24
+  
+az network public-ip create \
+  --resource-group demo-weu-rg \
+  --name myAGPublicIPAddress \
+  --allocation-method Static \
+  --sku Standard
+```
+
+```
+az network application-gateway create --resource-group demo-weu-rg --name AGW1 --vnet-name MyVNet --subnet myAGSubnet --public-ip-address myAGPublicIPAddress --sku Standard_v2 --capacity 1 --frontend-port 80 --http-settings-port 80 --priority 1000 
 ```
 
 #### Connect Application Gateway to AKS
 
 ```
-az aks enable-addons -n myk8s -g demo-weu-rg -a ingress-appgw --appgw-id "/subscriptions/<subscription id>/resourceGroups/k8srg/providers/Microsoft.Network/applicationGateways/k8sappgw"
+az aks enable-addons -n 1386e4a2-8f22-weu-aks -g demo-weu-rg -a ingress-appgw --appgw-id "/subscriptions/82cd7823-fbfa-4975-a9e8-b1b2201b17b3/resourceGroups/demo-weu-rg/providers/Microsoft.Network/applicationGateways/AGW1"
 ```
 
 #### Deploy example application
 ```
-kubectl apply -f example_app.yaml
+kubectl apply -f https://raw.githubusercontent.com/Azure/application-gateway-kubernetes-ingress/master/docs/examples/aspnetapp.yaml
+```
+## Testing
+
+#### Check if our ingress are updated by AKS
+
+1. Login into azure portal go to Application Gateway and check resources after deploy application.
+
+#### CleanUP
+```bash
+az group delete -n demo-weu-rg --yes --no-wait
 ```

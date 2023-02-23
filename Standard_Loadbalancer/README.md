@@ -1,16 +1,15 @@
-# Standard External Load Balancer
+# Basic External Load Balancer
 
 ## Requirements:
 
 * AKS Cluster
-* Standard External LoadBalancer
+* Basic External LoadBalancer
 * Virtual Machine in Azure.
 
 #### Create Resource group
 
 ```bash
-az group create --location westeurope \ 
-   --resource-group demo-weu-rg
+az group create --location westeurope --resource-group demo-weu-rg
 ```
 
 #### Create Service Principal
@@ -43,17 +42,17 @@ az aks create \
 > **_NOTE:_** Now we have to wait a while until our cluster is created
 
 #### Get kubeconfig
-
 ```bash
 az aks get-credentials \
   --resource-group demo-weu-rg \
   --name 1386e4a2-8f22-weu-aks \
   --admin
 ```
-
-
+#### Create SSH RSA keys
+```bash
+ssh-keygen -t rsa
+```
 #### Create VM
-
 ```bash
 az vm create \
   --location westeurope \
@@ -68,32 +67,41 @@ az vm create \
   --public-ip-sku Basic \
   --size Standard_B2s
 ```
-
 > **_NOTE:_** Now we have to wait a while until our VM is created
-
 ---
 ## Testing
-
+#### Add default rule in NSG for port 8080
+```bash
+  az network nsg rule create \
+    --resource-group demo-weu-rg \
+    --nsg-name bae6a7d275f6-weu-vmNSG \
+    --name AllowAnyCustom8080Inbound \
+    --priority 1011 \
+    --source-address-prefixes "*" \
+    --source-port-ranges "*" \
+    --destination-address-prefixes '*' \
+    --destination-port-ranges "8080" \
+    --access Allow \
+    --protocol Tcp 
+```
 #### Login via SSH to the VM and run netcat
 
 ```bash
 nc -l 8080
 ```
-
 #### Open second terminal and run tcpdump to inspect packets 
-
 ```bash
 tcpdump -n -i eth0 port 8080
 ```
-
 #### Deploy example pod
-
 ```
 kubectl run -it --rm busybox --image=busybox -- sh
 ``` 
-
 #### Run telnet command from AKS pod and observe tcpdump on VM
-
 ```bash
 telnet IP-FROM-OUR-VM 8080
+```
+#### CleanUP
+```bash
+az group delete -n demo-weu-rg --yes --no-wait
 ```
