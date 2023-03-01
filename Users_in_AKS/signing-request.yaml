@@ -1,0 +1,14 @@
+---
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+ name: testuser-csr
+spec:
+ groups:
+ - system:authenticated
+ request: PASTE-THE-CSR-BASE64-HERE
+ signerName: kubernetes.io/kube-apiserver-client
+ usages:
+ - digital signature
+ - key encipherment
+ - client auth

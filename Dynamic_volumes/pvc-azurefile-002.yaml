@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: azurefile-002
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile-premium
+  resources:
+    requests:
+      storage: 100Gi
