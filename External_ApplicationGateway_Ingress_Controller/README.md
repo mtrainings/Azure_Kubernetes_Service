@@ -59,13 +59,11 @@ az network vnet create \
   --address-prefix 10.21.0.0/16 \
   --subnet-name myAGSubnet \
   --subnet-prefix 10.21.0.0/24
-
 az network vnet subnet create \
   --name myBackendSubnet \
   --resource-group demo-weu-rg \
   --vnet-name myVNet   \
   --address-prefix 10.21.1.0/24
-  
 az network public-ip create \
   --resource-group demo-weu-rg \
   --name myAGPublicIPAddress \

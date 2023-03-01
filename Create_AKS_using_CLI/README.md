@@ -101,7 +101,6 @@ az network vnet subnet create \
   --address-prefixes 10.243.0.0/16 \
   --output none
 ```
-
 #### Get subnet ID
 
 ```bash
@@ -160,6 +159,7 @@ az aks get-credentials \
 
 ```
 kubectl create deployment nginx --image=nginx
+kubectl expose deployment nginx --type=ClusterIP --name=my-service
 ```
 
 2. Check if pod is up and running
