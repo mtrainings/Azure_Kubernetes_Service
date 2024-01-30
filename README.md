@@ -3,6 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![alt text](images/1630686924911.png)
 
+## Introduction
+
 Welcome to the Azure Kubernetes Service (AKS) practice labs! This repository contains hands-on exercises to help you learn and master various aspects of deploying and managing Kubernetes clusters on Azure. Feel free to explore the different topics listed below:
 
 ## Content
@@ -46,5 +48,21 @@ Welcome to the Azure Kubernetes Service (AKS) practice labs! This repository con
 ### 10. [Dynamic Volumes](Dynamic_volumes/README.md)
 
    Dive into the dynamic provisioning of volumes in AKS, understanding how to efficiently manage storage for your containerized applications.
+
+## Prerequisites
+
+- **Azure Account**: Ensure you have an active Azure account. If you don't have one, you can [create a free account](https://azure.microsoft.com/free/) before proceeding.
+
+- **Azure CLI**: Install the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) on your local machine to interact with Azure services from the command line.
+
+- **kubectl**: Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) on your machine to manage Kubernetes clusters.
+
+- **Git**: Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) to clone this repository and access the practice labs.
+
+## License
+
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+## Contribution
 
 Feel free to clone this repository and work through the exercises at your own pace. Each directory contains a detailed README.md file with instructions to guide you through the lab. Happy learning and happy Kuberneting on Azure! 🚀
