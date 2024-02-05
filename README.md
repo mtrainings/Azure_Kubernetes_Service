@@ -25,7 +25,7 @@ Welcome to the Azure Kubernetes Service (AKS) practice labs! This repository con
 
    Implement an external Nginx Ingress Controller along with Cert Manager to manage SSL/TLS certificates, enhancing the security of your AKS applications.
 
-### 5. [External Application Gateway Ingress Controller](External_ApplicationGateway_Ingress_Controller/README.md)
+### 5. [External Application Gateway Ingress Controller](LAB05/External_ApplicationGateway_Ingress_Controller.md)
 
    Explore the integration of the Azure Application Gateway Ingress Controller to efficiently manage ingress traffic in your AKS cluster.
 

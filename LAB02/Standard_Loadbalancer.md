@@ -11,6 +11,7 @@
 <details>
 <summary><b>Solution</b></summary>
 <p>
+
 ### 1. Create Resource Group
 
 Creates an Azure Resource Group for organizing and managing resources.
