@@ -9,19 +9,19 @@ Welcome to the Azure Kubernetes Service (AKS) practice labs! This repository con
 
 ## Content
 
-### 1. [Basic LoadBalancer](Basic_LoadBalancer/README.md)
+### 1. [Basic LoadBalancer](LAB01/Basic_LoadBalancer.md)
 
    Explore the basics of LoadBalancer configurations within AKS, understanding how to expose services to the external world.
 
-### 2. [Standard LoadBalancer](Standard_Loadbalancer/README.md)
+### 2. [Standard LoadBalancer](LAB02/Standard_Loadbalancer.md)
 
    Dive deeper into LoadBalancer concepts, focusing on the standard configuration and its benefits for your AKS deployment.
 
-### 3. [Traffic from Internet](Traffic_from_internet/README.md)
+### 3. [Traffic from Internet](LAB03/Traffic_from_internet.md)
 
    Learn how to manage and route traffic from the internet to your AKS cluster, ensuring seamless connectivity for your applications.
 
-### 4. [External Nginx Ingress Controller + Cert Manager](External_Nginx_Ingress_Controller_Cert_Manager/README.md)
+### 4. [External Nginx Ingress Controller + Cert Manager](LAB04/External_Nginx_Ingress_Controller_Cert_Manager.md)
 
    Implement an external Nginx Ingress Controller along with Cert Manager to manage SSL/TLS certificates, enhancing the security of your AKS applications.
 
