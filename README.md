@@ -29,15 +29,15 @@ Welcome to the Azure Kubernetes Service (AKS) practice labs! This repository con
 
    Explore the integration of the Azure Application Gateway Ingress Controller to efficiently manage ingress traffic in your AKS cluster.
 
-### 6. [Create AKS using CLI](Create_AKS_using_CLI/README.md)
+### 6. [Create AKS using CLI](LAB06/Create_AKS_using_CLI.md)
 
    Master the creation of AKS clusters using the Azure Command-Line Interface (CLI), providing a hands-on experience in deploying Kubernetes on Azure.
 
-### 7. [AKS Authorization](AKS_Authorization/README.md)
+### 7. [AKS Authorization](LAB07/AKS_Authorization.md)
 
    Understand and implement role-based access control (RBAC) in AKS, ensuring secure access and permissions for users and applications.
 
-### 8. [AKS + Azure AD](AKS_Azure_AD/README.md)
+### 8. [AKS + Azure AD](LAB08/AKS_Azure_AD.md)
 
    Integrate AKS with Azure Active Directory (AD), enabling seamless authentication and authorization for your Kubernetes workloads.
 
