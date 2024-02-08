@@ -41,11 +41,11 @@ Welcome to the Azure Kubernetes Service (AKS) practice labs! This repository con
 
    Integrate AKS with Azure Active Directory (AD), enabling seamless authentication and authorization for your Kubernetes workloads.
 
-### 9. [Users in AKS](Users_in_AKS/README.md)
+### 9. [Users in AKS](LAB09/Users_in_AKS.md)
 
    Explore user management within AKS, including creating and managing user accounts, providing a comprehensive understanding of identity and access management.
 
-### 10. [Dynamic Volumes](Dynamic_volumes/README.md)
+### 10. [Dynamic Volumes](LAB10/Dynamic_volumes.md)
 
    Dive into the dynamic provisioning of volumes in AKS, understanding how to efficiently manage storage for your containerized applications.
 
