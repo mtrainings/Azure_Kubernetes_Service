@@ -21,12 +21,12 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
-### 2. Create Service Principal
+### 2. Create SSH RSA Keys
 
-Generates a Service Principal for AKS with the necessary permissions.
+Generates SSH RSA keys for secure communication.
 
 ```bash
-az ad sp create-for-rbac --skip-assignment -n "spn-aks"
+ssh-keygen -t rsa
 ```
 
 ### 3. Create Azure Kubernetes Service
@@ -42,8 +42,6 @@ az aks create \
   --resource-group demo-weu-rg \
   --name <Your-AKS-Cluster-Name> \
   --ssh-key-value $HOME/.ssh/id_rsa.pub \
-  --service-principal "<Your-Service-Principal-ID>" \
-  --client-secret "<Your-Client-Secret>" \
   --network-plugin kubenet \
   --load-balancer-sku standard \
   --outbound-type loadBalancer \
@@ -63,17 +61,18 @@ az aks get-credentials \
   --admin
 ```
 
-### 5. Create Static IP address
+### 5. Creating a Static IP with Azure CLI
 
-Creates a static public IP address for the AKS cluster.
+To create a static IP in the same resource group where your AKS is deployed, you can use the following Azure CLI command:
 
 ```bash
 az network public-ip create \
-    --resource-group MC_demo-weu-rg_<Your-AKS-Cluster-Name>_westeurope \
-    --name myStandardPublicIP \
-    --version IPv4 \
-    --sku Standard \
-    --dns-name <Your-AKS-Cluster-Name>
+  --resource-group MC_demo-weu-rg_test-aks-weu_westeurope \
+  --name static-ip \
+  --sku Standard \
+  --allocation-method Static \
+  --location westeurope \
+  --dns-name <my-static-ip-fqdn>
 ```
 
 ### 6. Create an Ingress Controller with Static IP
@@ -82,8 +81,16 @@ Sets up an Ingress Controller with a static IP using Helm charts, ensuring prope
 
 ```bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
 
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --version 4.1.3 --namespace ingress-nginx --create-namespace --set controller.replicaCount=1 --set controller.nodeSelector."kubernetes\.io/os"=linux --set controller.admissionWebhooks.patch.nodeSelector."kubernetes\.io/os"=linux --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux --set controller.service.loadBalancerIP=STATIC-IP-ADDRESS
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+  --version 4.11.5 \
+  --namespace ingress-nginx \
+  --create-namespace \
+  --set controller.replicaCount=1 \
+  --set controller.nodeSelector."kubernetes\.io/os"=linux \
+  --set controller.admissionWebhooks.patch.nodeSelector."kubernetes\.io/os"=linux \
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz --set controller.service.loadBalancerIP=STATIC-IP-ADDRESS
 ```
 
 ### 7. Check the Load Balancer Service
@@ -101,12 +108,12 @@ Deploys Cert Manager using Helm charts and installs Custom Resource Definitions 
 ```bash
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
-helm upgrade cert-manager jetstack/cert-manager \
-    --install \
-    --create-namespace \
-    --wait \
-    --namespace cert-manager \
-    --set installCRDs=true
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.17.0 \
+  --set crds.enabled=true
 ```
 
 ### 9. Check Deployed Cert Manager Resources
