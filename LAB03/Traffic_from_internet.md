@@ -4,7 +4,7 @@
 
 ## Requirements
 
-* Azure Kubernetes Service (AKS) Cluster (Perform steps 1 to 4 if not already running)
+* Azure Kubernetes Service (AKS) Cluster (Perform steps 1 to 3 if not already running)
 * Basic Load Balancer
 
 <details>
@@ -19,15 +19,8 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
-### 2. Create Service Principal
 
-Generates a Service Principal for AKS with the necessary permissions.
-
-```bash
-az ad sp create-for-rbac --skip-assignment -n "spn-aks"
-```
-
-### 3. Create Azure Kubernetes Service
+### 2. Create Azure Kubernetes Service
 
 **NOTE**: Replace placeholders in `--subscription`, `--service-principal`, and `--client-secret` with actual values.
 
@@ -40,8 +33,6 @@ az aks create \
   --resource-group demo-weu-rg \
   --name <Your-AKS-Cluster-Name> \
   --ssh-key-value $HOME/.ssh/id_rsa.pub \
-  --service-principal "<Your-Service-Principal-ID>" \
-  --client-secret "<Your-Client-Secret>" \
   --network-plugin kubenet \
   --load-balancer-sku standard \
   --outbound-type loadBalancer \
@@ -50,7 +41,7 @@ az aks create \
   --tags 'ENV=Demo' 'OWNER=Corporation Inc.'
 ```
 
-### 4. Get Kubeconfig
+### 3. Get Kubeconfig
 
 Retrieves and merges the AKS cluster's kubeconfig into the local environment.
 
@@ -61,17 +52,25 @@ az aks get-credentials \
   --admin
 ```
 
-### 5. Create an Ingress Controller
+### 4. Create an Ingress Controller
 
 Sets up an Ingress Controller using Helm charts, ensuring proper configuration for Linux nodes and Azure Load Balancer health checks.
 
 ```bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
 
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --version 4.1.3 --namespace ingress-nginx --create-namespace --set controller.replicaCount=1 --set controller.nodeSelector."kubernetes\.io/os"=linux --set controller.admissionWebhooks.patch.nodeSelector."kubernetes\.io/os"=linux --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+  --version 4.11.5 \
+  --namespace ingress-nginx \
+  --create-namespace \
+  --set controller.replicaCount=1 \
+  --set controller.nodeSelector."kubernetes\.io/os"=linux \
+  --set controller.admissionWebhooks.patch.nodeSelector."kubernetes\.io/os"=linux \
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
 ```
 
-### 6. Check the Load Balancer Service
+### 5. Check the Load Balancer Service
 
 Monitors the Ingress Controller service to ensure successful deployment and obtain relevant details.
 
@@ -79,7 +78,7 @@ Monitors the Ingress Controller service to ensure successful deployment and obta
 kubectl get services --namespace ingress-nginx -o wide -w ingress-nginx-controller
 ```
 
-### 7. Deploy Application
+### 6. Deploy Application
 
 Deploys a sample application on the AKS cluster with associated services and ingress resources.
 
