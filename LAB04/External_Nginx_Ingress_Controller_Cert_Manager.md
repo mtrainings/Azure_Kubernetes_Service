@@ -31,8 +31,6 @@ ssh-keygen -t rsa
 
 ### 3. Create Azure Kubernetes Service
 
-**NOTE**: Replace placeholders in `--subscription`, `--service-principal`, and `--client-secret` with actual values.
-
 Deploys an AKS cluster with specified configurations.
 
 ```bash
