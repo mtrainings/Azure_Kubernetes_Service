@@ -6,7 +6,6 @@
 
 * Azure Kubernetes Service (AKS) Cluster (Perform steps 1 to 4 if not already running)
 * Standard Load Balancer
-* Virtual Machine in Azure.
 
 <details>
 <summary><b>Solution</b></summary>
