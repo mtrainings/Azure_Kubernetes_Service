@@ -20,12 +20,12 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
-### 2. Create Service Principal
+### 2. Create SSH RSA Keys
 
-Generates a Service Principal for AKS with the necessary permissions.
+Generates SSH RSA keys for secure communication.
 
 ```bash
-az ad sp create-for-rbac --skip-assignment -n "spn-aks"
+ssh-keygen -t rsa
 ```
 
 ### 3. Create Azure Kubernetes Service
@@ -41,8 +41,6 @@ az aks create \
   --resource-group demo-weu-rg \
   --name <Your-AKS-Cluster-Name> \
   --ssh-key-value $HOME/.ssh/id_rsa.pub \
-  --service-principal "<Your-Service-Principal-ID>" \
-  --client-secret "<Your-Client-Secret>" \
   --network-plugin kubenet \
   --load-balancer-sku standard \
   --outbound-type loadBalancer \
@@ -62,15 +60,7 @@ az aks get-credentials \
   --admin
 ```
 
-### 5. Create SSH RSA Keys
-
-Generates SSH RSA keys for secure communication.
-
-```bash
-ssh-keygen -t rsa
-```
-
-### 6. Create Virtual Machine
+### 5. Create Virtual Machine
 
 **NOTE**: Replace placeholders in `--subscription` with actual values.
 
@@ -84,7 +74,7 @@ az vm create \
   --name <Your-VM-Name> \
   --ssh-key-values $HOME/.ssh/id_rsa.pub \
   --admin-username devops \
-  --image UbuntuLTS \
+  --image Ubuntu2204 \
   --nsg-rule SSH \
   --public-ip-address-allocation static \
   --public-ip-sku Standard \
@@ -93,56 +83,66 @@ az vm create \
 
 ## Testing
 
-### 1. Add Default Rule in NSG for Port 8080
+### 1. Deploy Nginx with LoadBalancer
 
-Configures a Network Security Group rule to allow inbound traffic on port 8080.
+Create a file `nginx-lb.yaml` with the following content:
 
-```bash
-az network nsg rule create \
-  --resource-group demo-weu-rg \
-  --nsg-name <Your-VM-NSG-Name> \
-  --name AllowAnyCustom8080Inbound \
-  --priority 1011 \
-  --source-address-prefixes "*" \
-  --source-port-ranges "*" \
-  --destination-address-prefixes '*' \
-  --destination-port-ranges "8080" \
-  --access Allow \
-  --protocol Tcp 
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-demo
+  template:
+    metadata:
+      labels:
+        app: nginx-demo
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-demo
+  ports:
+  - port: 80
+    targetPort: 80
+ 
 ```
 
-### 2.Login via SSH to the VM and Run Netcat
-
-Starts a netcat listener on the VM for testing connectivity.
+Apply it:
 
 ```bash
-nc -l 8080
+kubectl apply -f nginx-lb.yaml
 ```
 
-### 3. Open a Second Terminal and Run Tcpdump to Inspect Packets
+### 2.Get External IP
 
-Captures and displays packets on port 8080 for analysis.
+Wait until EXTERNAL-IP is assigned.
 
 ```bash
-tcpdump -n -i eth0 port 8080
+kubectl get svc nginx-lb
 ```
 
-### 4. Deploy Example Pod
+### 3. Test from Local Machine
 
-Deploys a temporary pod for testing within the AKS cluster.
+You should see the default Welcome to nginx! page.
 
 ```bash
-kubectl run -it --rm busybox --image=busybox -- sh
+curl http://<EXTERNAL-IP>
 ```
-
-### 5. Run Telnet Command from AKS Pod and Observe Tcpdump on VM
-
-Tests network connectivity by initiating a telnet connection from the AKS pod to the VM on port 8080.
-
-```bash
-telnet <VM-IP-Address> 8080
-```
-
 ## Clean Up
 
 ### 1. Remove all resources
