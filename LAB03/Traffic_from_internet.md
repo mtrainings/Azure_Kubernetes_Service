@@ -4,8 +4,8 @@
 
 ## Requirements
 
-* Azure Kubernetes Service (AKS) Cluster (Perform steps 1 to 3 if not already running)
-* Basic Load Balancer
+* Azure Kubernetes Service (AKS) Cluster (Perform steps 1 to 4 if not already running)
+* Standard Load Balancer
 
 <details>
 <summary><b>Solution</b></summary>
@@ -19,8 +19,15 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
+### 2. Create SSH RSA Keys
 
-### 2. Create Azure Kubernetes Service
+Generates SSH RSA keys for secure communication.
+
+```bash
+ssh-keygen -t rsa
+```
+
+### 3. Create Azure Kubernetes Service
 
 **NOTE**: Replace placeholders in `--subscription`, `--service-principal`, and `--client-secret` with actual values.
 
@@ -41,7 +48,7 @@ az aks create \
   --tags 'ENV=Demo' 'OWNER=Corporation Inc.'
 ```
 
-### 3. Get Kubeconfig
+### 4. Get Kubeconfig
 
 Retrieves and merges the AKS cluster's kubeconfig into the local environment.
 
@@ -52,7 +59,7 @@ az aks get-credentials \
   --admin
 ```
 
-### 4. Create an Ingress Controller
+### 5. Create an Ingress Controller
 
 Sets up an Ingress Controller using Helm charts, ensuring proper configuration for Linux nodes and Azure Load Balancer health checks.
 
@@ -70,7 +77,7 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
 ```
 
-### 5. Check the Load Balancer Service
+### 6. Check the Load Balancer Service
 
 Monitors the Ingress Controller service to ensure successful deployment and obtain relevant details.
 
