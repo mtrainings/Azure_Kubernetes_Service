@@ -20,17 +20,15 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
-### 2. Create Service Principal
+### 2. Create SSH RSA Keys
 
-Generates a Service Principal for AKS with the necessary permissions.
+Generates SSH RSA keys for secure communication.
 
 ```bash
-az ad sp create-for-rbac --skip-assignment -n "spn-aks"
+ssh-keygen -t rsa
 ```
 
 ### 3. Create Azure Kubernetes Service
-
-**NOTE**: Replace placeholders in `--subscription`, `--service-principal`, and `--client-secret` with actual values.
 
 Deploys an AKS cluster with specified configurations.
 
@@ -41,8 +39,6 @@ az aks create \
   --resource-group demo-weu-rg \
   --name <Your-AKS-Cluster-Name> \
   --ssh-key-value $HOME/.ssh/id_rsa.pub \
-  --service-principal "<Your-Service-Principal-ID>" \
-  --client-secret "<Your-Client-Secret>" \
   --network-plugin kubenet \
   --load-balancer-sku standard \
   --outbound-type loadBalancer \
@@ -116,15 +112,7 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
-### 2. Create Service Principal
-
-Generates a Service Principal for AKS with the necessary permissions.
-
-```bash
-az ad sp create-for-rbac --skip-assignment -n "spn-aks"
-```
-
-### 3.Create VNET and Subnets
+### 2.Create VNET and Subnets
 
 Creates an Azure Virtual Network (VNET) and two subnets: `pod-subnet` and `node-subnet`.
 
@@ -150,7 +138,7 @@ az network vnet subnet create \
   --output none
 ```
 
-### 4. Get Subnet ID
+### 3. Get Subnet ID
 
 Retrieves the subnet IDs for further use in AKS cluster creation.
 
@@ -170,9 +158,7 @@ az network vnet subnet show \
   --output tsv
 ```
 
-### 5. Create Azure Kubernetes Service
-
-**NOTE**: Replace placeholders in  `--service-principal`, and `--client-secret` with actual values.
+### 4. Create Azure Kubernetes Service
 
 Deploys an AKS cluster using an existing VNET and subnets, with SSH RSA key and Azure Container Instances (ACI) integration.
 
@@ -184,18 +170,16 @@ az aks create \
     --node-vm-size Standard_B2s \
     --load-balancer-sku standard \
     --ssh-key-value $HOME/.ssh/id_rsa.pub \
-    --service-principal "<Your-Service-Principal-ID>" \
-    --client-secret "<Your-Client-Secret>" \
     --network-plugin "azure" \
     --network-policy "calico" \
     --vnet-subnet-id "node-subnet" \
     --pod-subnet-id "pod-subnet" \
     --node-count 1 \
     --max-pods 110
-  --tags 'ENV=Demo' 'OWNER=Corporation Inc.'
+    --tags 'ENV=Demo' 'OWNER=Corporation Inc.'
 ```
 
-### 6. Get Kubeconfig
+### 5. Get Kubeconfig
 
 Retrieves and merges the AKS cluster's kubeconfig into the local environment.
 
