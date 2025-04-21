@@ -1,4 +1,4 @@
-# Dockerfile_Build_And_Push_to_ACR
+# Dockerfile Build And Push to ACR
 
 **Exercise Overview**: This exercise walks through the steps required to build a custom Docker image from a simple Node.js application and push it to Azure Container Registry (ACR). You will also configure ACR and verify the image upload.
 
