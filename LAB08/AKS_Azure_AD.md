@@ -1,6 +1,6 @@
 # AKS + Azure AD
 
-**Exercise Overview**: This exercise focuses on setting up an Azure Kubernetes Service (AKS) cluster with Azure Active Directory (Azure AD) integration. Azure AD integration allows for user authentication, role-based access control (RBAC), and enhanced security within AKS.
+**Exercise Overview**: This exercise focuses on setting up an Azure Kubernetes Service (AKS) cluster with Azure Active Directory (Azure AD) integration. Azure AD integration enables user authentication, role-based access control (RBAC), and enhanced security for managing AKS access.
 
 ## Requirements
 
@@ -22,19 +22,31 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
-### 2. Create Service Principal
+### 2. Create SSH RSA Keys
 
-Generates a Service Principal for AKS with the necessary permissions.
+Generates SSH RSA keys for secure communication.
 
 ```bash
-az ad sp create-for-rbac --skip-assignment -n "spn-aks"
+ssh-keygen -t rsa
 ```
 
-### 3. Create Azure Kubernetes Service
+### 3. Create Azure AD Admin Group
 
-**NOTE**: Replace placeholders in `--subscription`, `--service-principal`, and `--client-secret` with actual values.
+Create an empty Azure AD group named `AKS-Admin` to be used for cluster administration.
 
-Deploys an AKS cluster with specified configurations.
+```bash
+az ad group create --display-name AKS-Admin --mail-nickname AKS-Admin
+```
+
+Retrieve its object ID:
+
+```bash
+ADMIN_GROUP_ID=$(az ad group show --group "AKS-Admin" --query id -o tsv)
+```
+
+### 4. Create AKS Cluster with Azure AD Integration
+
+Deploy an AKS cluster and enable Azure AD integration using the admin group object ID.
 
 ```bash
 az aks create \
@@ -43,33 +55,17 @@ az aks create \
   --resource-group demo-weu-rg \
   --name <Your-AKS-Cluster-Name> \
   --ssh-key-value $HOME/.ssh/id_rsa.pub \
-  --service-principal "<Your-Service-Principal-ID>" \
-  --client-secret "<Your-Client-Secret>" \
   --network-plugin kubenet \
   --load-balancer-sku standard \
   --outbound-type loadBalancer \
   --node-vm-size Standard_B2s \
   --node-count 1 \
-  --tags 'ENV=Demo' 'OWNER=Corporation Inc.'
+  --tags 'ENV=Demo' 'OWNER=Corporation Inc.' \
+  --enable-aad \
+  --aad-admin-group-object-ids $ADMIN_GROUP_ID
 ```
 
-### 4. Create empty AAD group for AKS Admins
-
-Create an empty Azure AD group named "AKS-Admin" to be used for AKS administrators.
-
-```bash
-az ad group create --display-name AKS-Admin --mail-nickname AKS-Admin
-```
-
-### 5. Enable AAD integration
-
-Update the AKS cluster to enable Azure AD integration and associate the AKS-Admin group with administrative privileges.
-
-```bash
-az aks update -g demo-weu-rg -n <Your-AKS-Cluster-Name> --enable-aad --aad-admin-group-object-ids "PROVIDE_OBJECT_ID_FROM_AAD"
-```
-
-## Testing with administrative rights
+## Testing with Administrative Rights
 
 ### 1. Get kubeconfig
 
@@ -78,87 +74,133 @@ Retrieve the kubeconfig file for AKS cluster access.
 ```bash
 az aks get-credentials \
   --resource-group demo-weu-rg \
-  --name <Your-AKS-Cluster-Name>
+  --name <Your-AKS-Cluster-Name> --admin
+
 ```
 
 ### 2. Check nodes
 
-Verify the availability and status of AKS cluster nodes.
+Verify cluster node status.
 
 ```bash
 kubectl get nodes
 ```
 
-### 3. Add user to admin groups
+### 3. Add user to admin group
 
-Check and add a user to the AKS-Admin group for administrative privileges.
+Add a user to the AKS-Admin group to grant admin access.
 
 ```bash
-az ad group member check --group AKS-Admin --member-id "USER_OBJECT_ID"
+az ad group member add --group AKS-Admin --member-id db2fd2b7-c593-414f-834c-c231487605c6
 ```
 
-### 4. Check nodes
+Check membership:
 
-Ensure that the user with admin privileges can access and manage AKS nodes.
+```bash
+az ad group member check --group AKS-Admin --member-id db2fd2b7-c593-414f-834c-c231487605c6
+```
+
+### 4. Verify access
+
+Log in as the added user and confirm access to the cluster:
 
 ```bash
 kubectl get nodes
 ```
 
-## Testing with normal rights
 
-### 1. Get the AAD user id or email
 
-Retrieve the Azure AD user's object ID or email for further configuration.
+## Testing with Normal User Rights
+
+### 1. Get AAD user object ID
 
 ```bash
-USER_ID=$(az ad user show --id UR_USER_NAME@xxxx.onmicrosoft.com --query objectId --out tsv)
+USER_ID=$(az ad user show --id test-user@contactthinkcube.onmicrosoft.com --query objectId -o tsv)
 ```
 
-### 2. Apply both yaml files
 
-Apply ClusterRole and ClusterRoleBinding yaml files for role-based access control.
+
+### 2. Apply YAML definitions
+
+Apply the ClusterRole and ClusterRoleBinding definitions for basic read access.
+
+`clusterrole.yaml`:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: readonly-role
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["get", "watch", "list"]
+```
+
+`clusterrolebinding.yaml`:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: readonly-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: readonly-role
+subjects:
+- kind: User
+  name: username@yourtenant.onmicrosoft.com  # or use objectId
+  apiGroup: rbac.authorization.k8s.io
+```
+
+Apply the manifests:
 
 ```bash
 kubectl apply -f files/clusterrole.yaml
 kubectl apply -f files/clusterrolebinding.yaml
 ```
 
-### 3. Assign the user with Azure Kubernetes Service Cluster User Role
 
-Assign the Azure Kubernetes Service Cluster User Role to the specified user, allowing them to download AKS access credentials.
+
+### 3. Assign Cluster User Role
+
+Allow the user to obtain kubeconfig credentials.
 
 ```bash
-az login
-
 AKS_ID=$(az aks show --resource-group demo-weu-rg --name <Your-AKS-Cluster-Name> --query id -o tsv)
 
-USER_ID=$(az ad user show --id UR_USER_NAME@xxxx.onmicrosoft.com --query objectId --out tsv)
-
-az role assignment create \
-  --assignee $USER_ID \
-  --role "Azure Kubernetes Service Cluster User Role" \
-  --scope $AKS_ID
+az role assignment create   --assignee $USER_ID   --role "Azure Kubernetes Service Cluster User Role"   --scope $AKS_ID
 ```
+
+
 
 ### 4. Check access
 
-Check if the user has proper access to the AKS cluster.
+As the normal user:
 
 ```bash
-az aks get-credentials \
-  --resource-group demo-weu-rg \
-  --name <Your-AKS-Cluster-Name>
+az aks get-credentials   --resource-group demo-weu-rg   --name <Your-AKS-Cluster-Name>
 ```
+
+Try running:
+
+```bash
+kubectl get pods --all-namespaces
+kubectl delete  po --all  -n kube-system
+```
+
+Expected: Limited access only (read-only for listed resources).
+
+
 
 ## Clean Up
 
-### 1. Remove all resources
-
-Deletes the resource group and associated resources.
+### 1. Delete all resources
 
 ```bash
 az group delete -n demo-weu-rg --yes --no-wait
 ```
+
 </p>
 </details>
