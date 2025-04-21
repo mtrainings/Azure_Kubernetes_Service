@@ -9,9 +9,9 @@ Welcome to the Azure Kubernetes Service (AKS) practice labs! This repository con
 
 ## Content
 
-### 1. [Basic LoadBalancer](LAB01/Basic_LoadBalancer.md)
+### 1. [Dockerfile Build And Push to ACR](LAB01/Dockerfile_Build_And_Push_to_ACR.md)
 
-   Explore the basics of LoadBalancer configurations within AKS, understanding how to expose services to the external world.
+   Build a custom Docker image from a simple Node.js application and push it to Azure Container Registry (ACR).
 
 ### 2. [Standard LoadBalancer](LAB02/Standard_Loadbalancer.md)
 

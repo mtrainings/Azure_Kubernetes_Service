@@ -19,17 +19,15 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
-### 2. Create Service Principal
+### 2. Create SSH RSA Keys
 
-Generates a Service Principal for AKS with the necessary permissions.
+Generates SSH RSA keys for secure communication.
 
 ```bash
-az ad sp create-for-rbac --skip-assignment -n "spn-aks"
+ssh-keygen -t rsa
 ```
 
 ### 3. Create Azure Kubernetes Service
-
-**NOTE**: Replace placeholders in `--subscription`, `--service-principal`, and `--client-secret` with actual values.
 
 Deploys an AKS cluster with specified configurations.
 
@@ -40,8 +38,6 @@ az aks create \
   --resource-group demo-weu-rg \
   --name <Your-AKS-Cluster-Name> \
   --ssh-key-value $HOME/.ssh/id_rsa.pub \
-  --service-principal "<Your-Service-Principal-ID>" \
-  --client-secret "<Your-Client-Secret>" \
   --network-plugin kubenet \
   --load-balancer-sku standard \
   --outbound-type loadBalancer \
@@ -50,34 +46,58 @@ az aks create \
   --tags 'ENV=Demo' 'OWNER=Corporation Inc.'
 ```
 
+### 4. Get Kubeconfig
+
+Retrieves and merges the AKS cluster's kubeconfig into the local environment.
+
+```bash
+az aks get-credentials \
+  --resource-group demo-weu-rg \
+  --name <Your-AKS-Cluster-Name> \
+  --admin
+```
+
 ## Testing
 
-### 1. Generate kubeconfig (get-credentials) for Admins
+### 1. Generate kubeconfig
 
 After successfully provisioning the Azure Kubernetes Service (AKS) cluster, it's essential to create a kubeconfig file specifically tailored for administrators. This file contains the necessary credentials and configuration settings to access the AKS cluster with administrative privileges.
 
 ```bash
 az aks get-credentials \
   --resource-group demo-weu-rg \
-  --name <Your-AKS-Cluster-Name> \
-  --file ./<Your-AKS-Cluster-Name>-admin.kubeconfig \
+  --name test-aks-weu \
+  --file .test-aks-weu-admin.kubeconfig \
   --admin
 ```
 
 Running this command will fetch the credentials for the AKS cluster and save them in a kubeconfig file named `<Your-AKS-Cluster-Name>-admin.kubeconfig`. Administrators can then use this file to interact with the AKS cluster, allowing them to perform tasks that require elevated permissions.
 
-### 2. Generate kubeconfig (get-credentials) for Users
+### 2. Check cluster access
 
-To facilitate secure access for regular users to the AKS cluster, a separate kubeconfig file needs to be generated. This file contains the necessary credentials and configurations for users to interact with the AKS cluster within the bounds of their assigned permissions.
+To verify that the kubeconfig file provides proper admin access, execute the following tests:
 
 ```bash
-az aks get-credentials \
-  --resource-group demo-weu-rg \
-  --name <Your-AKS-Cluster-Name> \
-  --file ./386e4a2-8f22-weu-aks-user.kubeconfig
+kubectl get nodes --kubeconfig .test-aks-weu-admin.kubeconfig
 ```
 
-Running this command will fetch the credentials for the AKS cluster and save them in a kubeconfig file named `<Your-AKS-Cluster-Name>-user.kubeconfig`. Users can utilize this file to perform tasks on the AKS cluster based on the permissions granted to their respective roles. Separating admin and user kubeconfig files ensures a granular and secure approach to cluster access.
+### 3. Check access to kube-system namespace
+
+```bash
+kubectl get pods -n kube-system --kubeconfig .test-aks-weu-admin.kubeconfig
+```
+
+### 4. Check if you can read clusterrolebindings
+
+```bash
+kubectl get clusterrolebindings --kubeconfig .test-aks-weu-admin.kubeconfig
+```
+
+### 5. Check your permissions (impersonating yourself)
+
+```bash
+kubectl auth can-i '*' '*' --all-namespaces -kubeconfig .test-aks-weu-admin.kubeconfig
+```
 
 ## Clean Up
 

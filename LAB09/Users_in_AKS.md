@@ -22,17 +22,15 @@ Creates an Azure Resource Group for organizing and managing resources.
 az group create --location westeurope --resource-group demo-weu-rg
 ```
 
-### 2. Create Service Principal
+### 2. Create SSH RSA Keys
 
-Generates a Service Principal for AKS with the necessary permissions.
+Generates SSH RSA keys for secure communication.
 
 ```bash
-az ad sp create-for-rbac --skip-assignment -n "spn-aks"
+ssh-keygen -t rsa
 ```
 
 ### 3. Create Azure Kubernetes Service
-
-**NOTE**: Replace placeholders in `--subscription`, `--service-principal`, and `--client-secret` with actual values.
 
 Deploys an AKS cluster with specified configurations.
 
@@ -43,8 +41,6 @@ az aks create \
   --resource-group demo-weu-rg \
   --name <Your-AKS-Cluster-Name> \
   --ssh-key-value $HOME/.ssh/id_rsa.pub \
-  --service-principal "<Your-Service-Principal-ID>" \
-  --client-secret "<Your-Client-Secret>" \
   --network-plugin kubenet \
   --load-balancer-sku standard \
   --outbound-type loadBalancer \
@@ -64,68 +60,140 @@ az aks get-credentials \
   --admin
 ```
 
-### 5.Generate and Approve User Certificate
+### 5. Define Parameters
 
-Generate a private key and Certificate Signing Request (CSR) for a test user. Apply the CSR manifest, approve the CSR, and download the signed certificate.
+Before starting, define the following parameters:
+
+- **USERNAME**: The name of the new user (e.g., `testuser2`).
+- **GROUP**: The group the user will belong to (e.g., `engineerw`).
+- **CLUSTER_NAME**: The name of your Kubernetes cluster.
+- **CLUSTER_SERVER**: The server URL for the Kubernetes cluster.
+- **CLUSTER_CA**: The certificate authority data for your cluster.
+- **KUBECONFIG_PATH**: The location where the new user's kubeconfig file will be stored (e.g., `~/.kube/devops-config`).
 
 ```bash
-# Generate private key
-openssl genrsa -out testuser.key 4096
-
-# Generate CSR
-openssl req -new -key testuser.key -out testuser.csr -subj "/CN=testuser/O=engineer"
-
-# Get CSR base64 encoded
-cat testuser.csr | base64 | tr -d '\n'
-
-# Apply CSR manifest and get CSR
-kubectl apply -f signing-request.yaml
-kubectl get csr
-
-# Approve the CSR request and get CSR
-kubectl certificate approve testuser-csr
-kubectl get csr
-
-# Download signed certificate
-kubectl get csr testuser-csr -o jsonpath='{.status.certificate}' | base64 --decode > testuser.crt
-cat testuser.crt
-
-# Get the CRT base64 encoded
-cat testuser.crt | base64 | tr -d '\n'
-
-# Get the key base64 encoded
-cat testuser.key | base64 | tr -d '\n'
+USERNAME="testuser2"
+GROUP="engineerw"
+CLUSTER_NAME="your-cluster-name"
+CLUSTER_SERVER="https://your-cluster-server"
+CLUSTER_CA="your-cluster-ca"
+KUBECONFIG_PATH="~/.kube/devops-config"
 ```
 
-### 6. Edit kubeconfig file
+### 6. Generate the Private Key
 
-Edit the kubeconfig file, replacing `client-certificate-data` and `client-key-dat`a with the base64-encoded certificate and key obtained in Task 5.
+Use OpenSSL to generate a private key for the new user:
+
+```bash
+openssl genrsa -out ${USERNAME}.key 4096
+```
+
+### 7. Generate the Certificate Signing Request (CSR)
+
+Create a CSR for the new user using the private key:
+
+```bash
+openssl req -new -key ${USERNAME}.key -out ${USERNAME}.csr -subj "/CN=${USERNAME}/O=${GROUP}"
+```
+
+### 8. Encode the CSR in Base64
+
+Encode the CSR in base64 format (without newlines) to make it compatible with Kubernetes:
+
+```bash
+CSR_BASE64=$(base64 < ${USERNAME}.csr | tr -d '\n')
+```
+
+### 9. Submit the CSR to Kubernetes
+
+Submit the CSR to Kubernetes to request a certificate for the new user:
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: ${USERNAME}-csr
+spec:
+  request: ${CSR_BASE64}
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - client auth
+EOF
+```
+
+### 10. Approve the CSR
+
+After submitting the CSR, approve it in Kubernetes:
+
+```bash
+kubectl certificate approve ${USERNAME}-csr
+```
+
+### 11. Retrieve the Signed Certificate
+
+Once the CSR is approved, retrieve the signed certificate for the user:
+
+```bash
+CERT=$(kubectl get csr ${USERNAME}-csr -o jsonpath='{.status.certificate}')
+echo "${CERT}" | base64 -d > ${USERNAME}.crt
+```
+
+### 12. Create the Kubeconfig File
+
+Create the kubeconfig file for the new user:
+
+```bash
+kubectl config --kubeconfig=${KUBECONFIG_PATH} set-cluster ${CLUSTER_NAME} \
+  --server=${CLUSTER_SERVER} \
+  --certificate-authority=<(echo "${CLUSTER_CA}" | base64 -d) \
+  --embed-certs=true
+
+kubectl config --kubeconfig=${KUBECONFIG_PATH} set-credentials ${USERNAME} \
+  --client-certificate=${USERNAME}.crt \
+  --client-key=${USERNAME}.key \
+  --embed-certs=true
+
+kubectl config --kubeconfig=${KUBECONFIG_PATH} set-context ${USERNAME}-context \
+  --cluster=${CLUSTER_NAME} \
+  --user=${USERNAME}
+
+kubectl config --kubeconfig=${KUBECONFIG_PATH} use-context ${USERNAME}-context
+```
+
+### 13. Assign Permissions to the User
+
+Now, assign necessary permissions to the new user. You can create a Role or RoleBinding for the user. For example, here is how to grant them the "view" role:
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ${USERNAME}-view
+  namespace: default
+subjects:
+- kind: User
+  name: ${USERNAME}
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+EOF
+```
 
 ## Testing
 
-### 1. Test New kubeconfig
+### 1. Test the New Kubeconfig
 
-Ensure the updated kubeconfig file works by listing nodes in the AKS cluster.
-
-```bash
-kubectl get nodes
-```
-
-### 2. Setup RBAC for User
-
-Apply RBAC configurations to grant specific permissions to the test user.
+To verify that the new user's kubeconfig file is working, list the nodes in the cluster:
 
 ```bash
-kubectl apply -f files/rbac-user.yaml
+kubectl get nodes --kubeconfig=${KUBECONFIG_PATH}
 ```
 
-### 3. Test Permissions
-
-Verify that the test user has the necessary permissions by listing nodes in the AKS cluster.
-
-```bash
-kubectl get nodes
-```
+This will confirm that the new user can successfully authenticate and interact with the cluster.
 
 ## Clean Up
 
