@@ -57,27 +57,6 @@ az aks get-credentials \
   --admin
 ```
 
-### 5. Create Virtual Machine
-
-**NOTE**: Replace placeholders in `--subscription` with actual values.
-
-Provisions a Virtual Machine with specified configurations, and wait for the VM creation to complete.
-
-```bash
-az vm create \
-  --location westeurope \
-  --subscription <Your-Subscription-ID> \
-  --resource-group demo-weu-rg \
-  --name <Your-VM-Name> \
-  --ssh-key-values $HOME/.ssh/id_rsa.pub \
-  --admin-username devops \
-  --image Ubuntu2204 \
-  --nsg-rule SSH \
-  --public-ip-address-allocation static \
-  --public-ip-sku Standard \
-  --size Standard_B2s
-```
-
 ## Testing
 
 ### 1. Deploy Nginx with LoadBalancer
