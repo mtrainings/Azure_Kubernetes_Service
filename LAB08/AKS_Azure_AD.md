@@ -91,13 +91,13 @@ kubectl get nodes
 Add a user to the AKS-Admin group to grant admin access.
 
 ```bash
-az ad group member add --group AKS-Admin --member-id db2fd2b7-c593-414f-834c-c231487605c6
+az ad group member add --group AKS-Admin --member-id <MEMBER-ID>
 ```
 
 Check membership:
 
 ```bash
-az ad group member check --group AKS-Admin --member-id db2fd2b7-c593-414f-834c-c231487605c6
+az ad group member check --group AKS-Admin --member-id <MEMBER-ID>
 ```
 
 ### 4. Verify access
@@ -115,7 +115,7 @@ kubectl get nodes
 ### 1. Get AAD user object ID
 
 ```bash
-USER_ID=$(az ad user show --id test-user@contactthinkcube.onmicrosoft.com --query objectId -o tsv)
+USER_ID=$(az ad user show --id <ADDRESS-EMAIL> --query objectId -o tsv)
 ```
 
 

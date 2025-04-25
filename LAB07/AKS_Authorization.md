@@ -66,8 +66,8 @@ After successfully provisioning the Azure Kubernetes Service (AKS) cluster, it's
 ```bash
 az aks get-credentials \
   --resource-group demo-weu-rg \
-  --name test-aks-weu \
-  --file .test-aks-weu-admin.kubeconfig \
+  --name <Your-AKS-Cluster-Name> \
+  --file .<Your-AKS-Cluster-Name>-admin.kubeconfig \
   --admin
 ```
 
@@ -78,25 +78,25 @@ Running this command will fetch the credentials for the AKS cluster and save the
 To verify that the kubeconfig file provides proper admin access, execute the following tests:
 
 ```bash
-kubectl get nodes --kubeconfig .test-aks-weu-admin.kubeconfig
+kubectl get nodes --kubeconfig .<Your-AKS-Cluster-Name>-admin.kubeconfig
 ```
 
 ### 3. Check access to kube-system namespace
 
 ```bash
-kubectl get pods -n kube-system --kubeconfig .test-aks-weu-admin.kubeconfig
+kubectl get pods -n kube-system --kubeconfig .<Your-AKS-Cluster-Name>-admin.kubeconfig
 ```
 
 ### 4. Check if you can read clusterrolebindings
 
 ```bash
-kubectl get clusterrolebindings --kubeconfig .test-aks-weu-admin.kubeconfig
+kubectl get clusterrolebindings --kubeconfig .<Your-AKS-Cluster-Name>-admin.kubeconfig
 ```
 
 ### 5. Check your permissions (impersonating yourself)
 
 ```bash
-kubectl auth can-i '*' '*' --all-namespaces -kubeconfig .test-aks-weu-admin.kubeconfig
+kubectl auth can-i '*' '*' --all-namespaces -kubeconfig .<Your-AKS-Cluster-Name>-admin.kubeconfig
 ```
 
 ## Clean Up

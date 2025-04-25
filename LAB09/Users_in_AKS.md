@@ -64,16 +64,16 @@ az aks get-credentials \
 
 Before starting, define the following parameters:
 
-- **USERNAME**: The name of the new user (e.g., `testuser2`).
-- **GROUP**: The group the user will belong to (e.g., `engineerw`).
+- **USERNAME**: The name of the new user (e.g., `testuser`).
+- **GROUP**: The group the user will belong to (e.g., `engineer`).
 - **CLUSTER_NAME**: The name of your Kubernetes cluster.
 - **CLUSTER_SERVER**: The server URL for the Kubernetes cluster.
 - **CLUSTER_CA**: The certificate authority data for your cluster.
 - **KUBECONFIG_PATH**: The location where the new user's kubeconfig file will be stored (e.g., `~/.kube/devops-config`).
 
 ```bash
-USERNAME="testuser2"
-GROUP="engineerw"
+USERNAME="testuser"
+GROUP="engineer"
 CLUSTER_NAME="your-cluster-name"
 CLUSTER_SERVER="https://your-cluster-server"
 CLUSTER_CA="your-cluster-ca"
