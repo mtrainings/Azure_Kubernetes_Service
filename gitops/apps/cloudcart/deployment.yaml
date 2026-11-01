@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudcart
+  labels:
+    app: cloudcart
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloudcart
+  template:
+    metadata:
+      labels:
+        app: cloudcart
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: api
+          image: ACR_NAME.azurecr.io/cloudcart:1.0
+          env:
+            - name: APP_VERSION
+              value: "1.0"
+            - name: TITLE
+              value: "CloudCart (managed by Flux)"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080

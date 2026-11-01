@@ -1,0 +1,38 @@
+// 1. CloudCart container logs, last 30 minutes (Container insights, ContainerLogV2)
+ContainerLogV2
+| where TimeGenerated > ago(30m)
+| where PodNamespace == "cloudcart"
+| project TimeGenerated, PodName, ContainerName, LogMessage
+| order by TimeGenerated desc
+| take 100
+
+// 2. Pods that restarted in the last day
+KubePodInventory
+| where TimeGenerated > ago(1d)
+| where Namespace == "cloudcart"
+| summarize Restarts = max(ContainerRestartCount) by Name
+| where Restarts > 0
+| order by Restarts desc
+
+// 3. Who changed what (control-plane audit, resource-specific table)
+AKSAuditAdmin
+| where TimeGenerated > ago(2h)
+| where ObjectRef.namespace == "cloudcart"
+| project TimeGenerated, User = User.username, Verb, Resource = ObjectRef.resource, Name = ObjectRef.name
+| order by TimeGenerated desc
+
+// 4. Cluster autoscaler decisions
+AKSControlPlane
+| where TimeGenerated > ago(2h)
+| where Category == "cluster-autoscaler"
+| where Message has_any ("scale-up", "Scale-up", "scale down", "ScaleDown")
+| project TimeGenerated, Message
+| order by TimeGenerated desc
+
+// 5. CPU usage per pod (Container insights performance data)
+Perf
+| where TimeGenerated > ago(30m)
+| where ObjectName == "K8SContainer" and CounterName == "cpuUsageNanoCores"
+| where InstanceName has "cloudcart"
+| summarize AvgCpuMillicores = avg(CounterValue) / 1000000 by bin(TimeGenerated, 1m), InstanceName
+| render timechart

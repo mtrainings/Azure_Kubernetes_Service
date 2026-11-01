@@ -1,0 +1,14 @@
+# Bind the Role from LAB08 to an Entra ID group (subject name = group object ID)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloudcart-developers-entra
+  namespace: cloudcart
+subjects:
+  - kind: Group
+    name: <ENTRA-GROUP-OBJECT-ID>
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: cloudcart-developer
+  apiGroup: rbac.authorization.k8s.io

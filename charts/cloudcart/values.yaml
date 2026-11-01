@@ -1,0 +1,19 @@
+replicaCount: 2
+
+image:
+  repository: ACR_NAME.azurecr.io/cloudcart   # set by the pipeline
+  tag: "1.0"
+  pullPolicy: IfNotPresent
+
+appVersion: "1.0"
+title: "CloudCart (deployed by CI/CD)"
+
+service:
+  port: 80
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

@@ -1,0 +1,64 @@
+# LAB14 - CI/CD: build in ACR, lint the chart, deploy with Helm, smoke test
+# Service connection "sc-aks-lab": Azure Resource Manager, Workload identity federation (automatic)
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include: [app/*, charts/*]
+
+variables:
+  azureServiceConnection: sc-aks-lab
+  acrName: <ACR>              # e.g. acrlabanna1x2y3
+  resourceGroup: <RG>
+  clusterName: <CLUSTER>
+  namespace: cloudcart-cicd
+  imageTag: $(Build.BuildId)
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Build
+    jobs:
+      - job: image
+        steps:
+          - task: AzureCLI@2
+            displayName: Build and push the image (ACR Tasks)
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: az acr build -r $(acrName) -t cloudcart:$(imageTag) app/
+
+          - script: |
+              helm lint charts/cloudcart
+              helm template cloudcart charts/cloudcart --set image.tag=$(imageTag) > /dev/null
+            displayName: Lint the Helm chart
+
+  - stage: Deploy
+    dependsOn: Build
+    jobs:
+      - deployment: aks
+        environment: cloudcart-lab          # add approvals/checks here
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - task: KubeloginInstaller@0
+                - task: AzureCLI@2
+                  displayName: Helm upgrade + smoke test
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -e
+                      az aks get-credentials -g $(resourceGroup) -n $(clusterName) --overwrite-existing
+                      kubelogin convert-kubeconfig -l azurecli
+                      helm upgrade --install cloudcart charts/cloudcart -n $(namespace) \
+                        --set image.repository=$(acrName).azurecr.io/cloudcart \
+                        --set image.tag=$(imageTag) \
+                        --set appVersion=$(imageTag) \
+                        --wait --timeout 5m
+                      helm test cloudcart -n $(namespace) --logs

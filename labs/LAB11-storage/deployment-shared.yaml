@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uploads
+  namespace: cloudcart
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: uploads
+  template:
+    metadata:
+      labels:
+        app: uploads
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: uploads
+      containers:
+        - name: api
+          image: ${ACR}.azurecr.io/cloudcart:1.0
+          env:
+            - name: DATA_DIR
+              value: /data
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: shared
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+      volumes:
+        - name: shared
+          persistentVolumeClaim:
+            claimName: uploads
