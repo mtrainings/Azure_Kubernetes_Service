@@ -36,7 +36,7 @@ LAB06 and LAB14 are the longest – drop one of them for a shorter class.
 - **LAB02** – `--attach-acr` needs role-assignment rights; if participants are only *Contributor*, attach the ACR for them.
 - **LAB04** – the App Routing Gateway API implementation (`approuting-istio`) is GA since 2026. If it's not available in your region yet, use the Istio service mesh add-on Gateway (`istio` class) – the manifests only change the `gatewayClassName`.
 - **LAB05** – Let's Encrypt staging first. If outbound HTTP-01 fails, check that the DNS label resolved (Azure DNS label creation can take 1–2 min).
-- **LAB06** – most failures are missing role assignments or the subnet. Verify AGC supports the cluster's network configuration (Azure CNI / CNI Overlay) in your region. AGC is billed hourly – make sure Step 7 is done.
+- **LAB06** – install the ALB Controller with `installGatewayApiCRDs=false`: the cluster already has AKS-managed Gateway API CRDs from LAB04, and the controller's CRD init container fails otherwise. Other failures are usually missing role assignments or the subnet. Verify AGC supports the cluster's network configuration (Azure CNI / CNI Overlay) in your region. AGC is billed hourly – make sure Step 7 is done.
 - **LAB07** – the "site down after default deny" moment is intentional.
 - **LAB09** – enabling Entra ID is irreversible; `--disable-local-accounts` breaks LAB08 credentials (that's the point). Certificates issued via the CSR API remain valid until they expire – discuss `az aks rotate-certs`.
 - **LAB12** – Log Analytics ingestion costs: keep the lab short or use the "Logs and events" cost preset.

@@ -54,10 +54,13 @@ helm install alb-controller oci://mcr.microsoft.com/application-lb/charts/alb-co
   --namespace azure-alb-system --create-namespace \
   --version $ALB_CONTROLLER_VERSION \
   --set albController.namespace=azure-alb-system \
-  --set albController.podIdentity.clientID=$ALB_CLIENT_ID
-kubectl -n azure-alb-system get pods
+  --set albController.podIdentity.clientID=$ALB_CLIENT_ID \
+  --set albController.installGatewayApiCRDs=false
+kubectl -n azure-alb-system rollout status deploy/alb-controller --timeout=180s
 kubectl get gatewayclass azure-alb-external
 ```
+
+`installGatewayApiCRDs=false`: the Gateway API CRDs are already installed and **managed by AKS** since LAB04 (`--enable-gateway-api`). Two owners of the same CRDs don't mix – without this flag the controller's init container fails with `CrashLoopBackOff`. (On a cluster without managed Gateway API, leave the default `true`.)
 
 ✅ **Checkpoint:** controller pods `Running`, GatewayClass `azure-alb-external` `Accepted=True`.
 
@@ -122,6 +125,7 @@ kubectl -n alb-infra delete applicationloadbalancer alb-cloudcart     # controll
 
 | Symptom | Likely cause |
 |---|---|
+| init container `init-alb-controller-crds` in `BackOff` | Gateway API CRDs are AKS-managed – reinstall with `helm upgrade … --reuse-values --set albController.installGatewayApiCRDs=false` |
 | controller pods `CrashLoopBackOff`, auth errors | federated credential name/subject wrong, or workload identity not enabled on the cluster |
 | `ApplicationLoadBalancer` never `Deployment=True` | missing role assignment (Configuration Manager / Network Contributor), subnet not delegated or too small |
 | Gateway without address | annotations `alb-namespace` / `alb-name` don't match the ApplicationLoadBalancer |
