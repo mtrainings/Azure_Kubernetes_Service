@@ -66,25 +66,55 @@ az role definition list --query "[?contains(roleName,'Azure Kubernetes Service R
 
 Built-in roles: *RBAC Reader*, *RBAC Writer*, *RBAC Admin*, *RBAC Cluster Admin*.
 
-## Step 5 – Give your neighbour read access to one namespace
+## Step 5 – Read access to one namespace for someone else
 
-Get your neighbour's user object ID (`az ad signed-in-user show --query id -o tsv` on their machine), then:
+You are a cluster admin through the admin group, so testing with **your own** account proves nothing. Use a second identity – **5A** with a lab partner, or **5B** on your own.
+
+### 5A – With your neighbour
+
+Your neighbour runs `az ad signed-in-user show --query id -o tsv` on **their** machine and gives you the ID (not your own!). You grant the roles:
 
 ```bash
-NEIGHBOUR_ID=<object id>
+NEIGHBOUR_ID=<neighbour's object id>
 az role assignment create --assignee $NEIGHBOUR_ID --role "Azure Kubernetes Service Cluster User Role" --scope $AKS_ID
 az role assignment create --assignee $NEIGHBOUR_ID --role "Azure Kubernetes Service RBAC Reader" \
   --scope $AKS_ID/namespaces/cloudcart
 echo "az aks get-credentials -g $RG -n $CLUSTER --file ~/.kube/neighbour && kubelogin convert-kubeconfig -l azurecli --kubeconfig ~/.kube/neighbour"
 ```
 
-Your neighbour runs the printed command, then:
+Send the printed line to your neighbour. **They** run it in their shell, then:
 
 ```bash
-kubectl --kubeconfig ~/.kube/neighbour get pods -n cloudcart     # allowed
-kubectl --kubeconfig ~/.kube/neighbour get pods -n kube-system   # forbidden
+kubectl --kubeconfig ~/.kube/neighbour get pods -n cloudcart           # allowed
+kubectl --kubeconfig ~/.kube/neighbour get pods -n kube-system         # forbidden
 kubectl --kubeconfig ~/.kube/neighbour delete pod --all -n cloudcart   # forbidden
 ```
+
+### 5B – On your own, with a test service principal
+
+```bash
+read SP_APPID SP_SECRET SP_TENANT <<< "$(az ad sp create-for-rbac -n sp-aks-reader-$PREFIX --query '[appId,password,tenant]' -o tsv)"
+SP_OID=$(az ad sp show --id $SP_APPID --query id -o tsv)
+az role assignment create --assignee-object-id $SP_OID --assignee-principal-type ServicePrincipal \
+  --role "Azure Kubernetes Service Cluster User Role" --scope $AKS_ID
+az role assignment create --assignee-object-id $SP_OID --assignee-principal-type ServicePrincipal \
+  --role "Azure Kubernetes Service RBAC Reader" --scope $AKS_ID/namespaces/cloudcart
+sleep 60
+
+export AZURE_CONFIG_DIR=~/.azure-reader          # separate az profile - your own login stays untouched
+az login --service-principal -u $SP_APPID -p $SP_SECRET --tenant $SP_TENANT -o none
+az aks get-credentials -g $RG -n $CLUSTER --file ~/.kube/reader
+kubelogin convert-kubeconfig -l azurecli --kubeconfig ~/.kube/reader
+
+kubectl --kubeconfig ~/.kube/reader auth whoami
+kubectl --kubeconfig ~/.kube/reader get pods -n cloudcart              # allowed
+kubectl --kubeconfig ~/.kube/reader get pods -n kube-system            # forbidden
+kubectl --kubeconfig ~/.kube/reader delete pod --all -n cloudcart      # forbidden
+
+unset AZURE_CONFIG_DIR                           # back to your own account
+```
+
+(`az ad sp create-for-rbac` fails with *Insufficient privileges* if your tenant doesn't let users register applications – then use 5A.)
 
 ✅ **Checkpoint:** read-only, one namespace – managed entirely from Azure. Role assignments can take up to 5 minutes to apply.
 
@@ -106,3 +136,7 @@ Observe and discuss: static admin credentials are gone. What about certificates 
 | browser/device-code prompt on every kubectl call | run `kubelogin convert-kubeconfig -l azurecli` |
 | `Forbidden` right after a role assignment | propagation delay (up to 5 min) |
 | CI pipeline can't log in after Step 6 | pipelines need an Entra identity too (kubelogin with workload identity / service principal) |
+| `stat ~/.kube/neighbour: no such file` | the `echo` only prints the command – your neighbour runs it in their own shell |
+| reader can do everything | you tested with your own (admin) account – use a different identity (5A / 5B) |
+
+Clean up the test identity from 5B when you're done: `az ad app delete --id $SP_APPID`.
