@@ -102,7 +102,7 @@ az role assignment create --assignee-object-id $SP_OID --assignee-principal-type
 sleep 60
 
 export AZURE_CONFIG_DIR=~/.azure-reader          # separate az profile - your own login stays untouched
-az login --service-principal -u $SP_APPID -p $SP_SECRET --tenant $SP_TENANT -o none
+az login --service-principal --username "$SP_APPID" --password="$SP_SECRET" --tenant "$SP_TENANT" -o none   # "=": secrets may start with "-"
 az aks get-credentials -g $RG -n $CLUSTER --file ~/.kube/reader
 kubelogin convert-kubeconfig -l azurecli --kubeconfig ~/.kube/reader
 
@@ -138,5 +138,6 @@ Observe and discuss: static admin credentials are gone. What about certificates 
 | CI pipeline can't log in after Step 6 | pipelines need an Entra identity too (kubelogin with workload identity / service principal) |
 | `stat ~/.kube/neighbour: no such file` | the `echo` only prints the command – your neighbour runs it in their own shell |
 | reader can do everything | you tested with your own (admin) account – use a different identity (5A / 5B) |
+| `az login`: `argument --password/-p: expected one argument` | the secret starts with `-` or `$SP_SECRET` is empty (new shell) – use `--password="$SP_SECRET"`; new secret: `az ad app credential reset --id $SP_APPID --query password -o tsv` |
 
 Clean up the test identity from 5B when you're done: `az ad app delete --id $SP_APPID`.
