@@ -38,7 +38,7 @@ flowchart LR
 
 ## Prerequisites
 
-- An Azure subscription where you are **Owner** of a resource group (role assignments are part of the labs) and quota for ~8 vCPUs (DSv5) in the chosen region
+- An Azure subscription where you are **Owner** of a resource group (role assignments are part of the labs) and quota for ~8 vCPUs in the chosen region (LAB02 shows how to pick a VM size your subscription allows)
 - **Azure Cloud Shell (Bash)** – recommended, everything is pre-installed – or locally: Azure CLI 2.70+, `kubectl`, `kubelogin`, `helm` 3, `git`, `envsubst` (`gettext-base`), `openssl`
 - LAB09: an Entra ID group for cluster admins (or permission to create one) and a lab partner
 - LAB13/14: a GitHub account (public fork) or an Azure DevOps project

@@ -1,3 +1,4 @@
 .lab-suffix
+.lab-node-size
 *.kubeconfig
 node_modules/

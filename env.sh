@@ -17,6 +17,12 @@ export RG="rg-akslab-${PREFIX}"
 export CLUSTER="aks-lab-${PREFIX}"
 export ACR="acrlab${PREFIX}${SUFFIX}"          # 5-50 alphanumeric, globally unique
 export KV="kv-lab-${PREFIX}${SUFFIX}"          # 3-24 characters, globally unique
+# node size: remembered once set (NODE_SIZE=... source env.sh), so new shells pick it up
+if [[ -n "${NODE_SIZE:-}" ]]; then
+  echo "$NODE_SIZE" > "$LAB_ROOT/.lab-node-size"
+elif [[ -f "$LAB_ROOT/.lab-node-size" ]]; then
+  NODE_SIZE="$(cat "$LAB_ROOT/.lab-node-size")"
+fi
 export NODE_SIZE="${NODE_SIZE:-Standard_D2s_v5}"
 export DNS_LABEL="cloudcart-${PREFIX}${SUFFIX}"
 export APP_HOST="${DNS_LABEL}.${LOCATION}.cloudapp.azure.com"

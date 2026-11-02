@@ -13,8 +13,30 @@
 ```bash
 source env.sh
 az aks get-versions -l $LOCATION -o table                 # supported Kubernetes versions
-az vm list-usage -l $LOCATION -o table | grep -i "Total Regional vCPUs\|DSv5"
+
+# VM families you may use in this region (used / limit vCPUs)
+az vm list-usage -l $LOCATION \
+  --query "[?limit > \`0\` && (contains(name.value, 'Family') || name.value == 'cores')].{family:name.localizedValue, used:currentValue, limit:limit}" -o table
 ```
+
+The labs need about **8 vCPUs** at peak (2 system nodes + 1–2 `apps` nodes + upgrade surge) – both in *Total Regional vCPUs* and in the family of `$NODE_SIZE` (default `Standard_D2s_v5` → *Standard DSv5 Family*).
+
+**DSv5 limit is 0?** Many subscriptions (Visual Studio, trial, sponsored) only have quota for some families. Pick a 2-vCPU size from a family that has quota and reload the variables:
+
+| Family with quota | `NODE_SIZE` |
+|---|---|
+| Standard DASv5 | `Standard_D2as_v5` |
+| Standard DSv4 | `Standard_D2s_v4` |
+| Standard DSv3 | `Standard_D2s_v3` |
+| Standard DADSv5 | `Standard_D2ads_v5` |
+| Standard BS | `Standard_B2s` (burstable – fine for the labs) |
+
+```bash
+NODE_SIZE=Standard_D2as_v5 source env.sh      # remembered - later shells only need: source env.sh
+az vm list-skus -l $LOCATION --size $NODE_SIZE --query "[0].restrictions" -o json   # [] = available
+```
+
+Or request more quota: portal → **Quotas → Compute** → region + family → *New quota request* (small requests are usually approved automatically within minutes).
 
 ## Step 2 – Create the cluster
 
@@ -121,6 +143,7 @@ az aks stop -g $RG -n $CLUSTER      # next morning: az aks start -g $RG -n $CLUS
 
 | Symptom | Likely cause |
 |---|---|
+| `ErrCode_InsufficientVCPUQuota … remaining 0 for family …` | no quota for that VM family – Step 1: pick a `NODE_SIZE` from a family with quota, or request more |
 | `QuotaExceeded` / `OperationNotAllowed … cores` | regional vCPU quota – use a smaller `NODE_SIZE` or another region |
 | `ErrImagePull` / `401 Unauthorized` from ACR | ACR not attached – `az aks update -g $RG -n $CLUSTER --attach-acr $ACR` |
 | `envsubst: command not found` | `sudo apt install gettext-base` (or use Cloud Shell) |

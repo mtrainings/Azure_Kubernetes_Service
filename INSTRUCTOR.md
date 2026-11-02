@@ -2,7 +2,7 @@
 
 ## Before the course
 
-1. **Subscriptions.** One subscription (or one resource group with *Owner*) per participant. Check regional vCPU quota: each participant needs ~8 vCPUs (DSv5) at peak (LAB12).
+1. **Subscriptions.** One subscription (or one resource group with *Owner*) per participant. Check regional vCPU quota: each participant needs ~8 vCPUs at peak (LAB12). Visual Studio / trial subscriptions often have quota 0 for DSv5 - check `az vm list-usage` beforehand and agree on a `NODE_SIZE` (LAB02 Step 1).
 2. **Region.** Pick one with AKS, Application Gateway for Containers and availability zones (e.g. `westeurope`, `northeurope`, `swedencentral`). Set `LOCATION` in `env.sh` if you change it.
 3. **Entra ID (LAB09).** Participants often can't create groups. Pre-create `aks-admins-<name>` groups (or one shared group) and add participants; hand out the object IDs.
 4. **Versions.** Check `az aks get-versions`, the cert-manager and ALB Controller chart versions in `env.sh`:
