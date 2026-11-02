@@ -88,10 +88,17 @@ az role assignment create --assignee-object-id $ALB_PRINCIPAL --assignee-princip
 
 ```bash
 envsubst < labs/LAB06-app-gateway-for-containers/alb.yaml | kubectl apply -f -
-kubectl -n alb-infra get applicationloadbalancer alb-cloudcart -o yaml -w   # wait for Deployment=True (~5 min)
+
+# check every minute until Deployment=True (5-10 min)
+kubectl -n alb-infra get applicationloadbalancer alb-cloudcart \
+  -o jsonpath='{range .status.conditions[*]}{.type}={.status} {.message}{"\n"}{end}'
+kubectl get overlayextensionconfigs -n azure-alb-system \
+  -o custom-columns=NAME:.metadata.name,RANGE:.spec.extensionIPRange,STATE:.status.state
 ```
 
 In the portal (node resource group) a resource of type **Application Gateway for Containers** appears.
+
+With **Azure CNI Overlay** pods have no VNet IPs, so the controller also creates an `OverlayExtensionConfig`: AKS networking (azure-cns) then routes traffic from the AGC subnet into the pod overlay. It's normal to see `Deployment=False … timed out waiting for overlay extension config to be ready` for a few minutes – the controller retries until the config is `Succeeded` and the status returns to `Deployment=True`.
 
 ## Step 6 – Gateway and route
 
@@ -127,6 +134,7 @@ kubectl -n alb-infra delete applicationloadbalancer alb-cloudcart     # controll
 |---|---|
 | init container `init-alb-controller-crds` in `BackOff` | Gateway API CRDs are AKS-managed – rerun the Step 3 command (`helm upgrade --install` updates the existing release) |
 | controller pods `CrashLoopBackOff`, auth errors | federated credential name/subject wrong, or workload identity not enabled on the cluster |
+| `Deployment=False … timed out waiting for overlay extension config` | usually transient – wait 5–10 min; if it stays, check `kubectl get overlayextensionconfigs -A` and the `azure-cns` pods in `kube-system` |
 | `ApplicationLoadBalancer` never `Deployment=True` | missing role assignment (Configuration Manager / Network Contributor), subnet not delegated or too small |
 | Gateway without address | annotations `alb-namespace` / `alb-name` don't match the ApplicationLoadBalancer |
 | `RegionNotSupported` | AGC isn't available in your region – check the product availability page |
