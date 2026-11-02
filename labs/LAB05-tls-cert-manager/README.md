@@ -72,8 +72,11 @@ kubectl -n cloudcart describe challenge          # while it is pending
 kubectl -n cloudcart get httproute               # the temporary solver route
 kubectl -n cloudcart get certificate cloudcart-tls -w   # READY=True after ~1 min
 curl -sk https://$APP_HOST/ | grep version
-curl -sv https://$APP_HOST/ 2>&1 | grep -i "issuer"      # (STAGING) Let's Encrypt
+curl -skv https://$APP_HOST/ 2>&1 | grep -i "issuer:"    # O=(STAGING) Let's Encrypt
+curl -s https://$APP_HOST/ || echo "not trusted - expected for staging"
 ```
+
+✅ **Checkpoint:** HTTPS works with `-k`, the issuer is `(STAGING) Let's Encrypt`, and without `-k` curl reports *unable to get local issuer certificate* – staging certificates are signed by a test CA nobody trusts. That's exactly why you test with staging first, then switch to production.
 
 ## Step 5 – Production certificate
 
@@ -82,6 +85,7 @@ kubectl -n cloudcart annotate gateway cloudcart-gw cert-manager.io/cluster-issue
 kubectl -n cloudcart delete secret cloudcart-tls          # force re-issue
 kubectl -n cloudcart get certificate cloudcart-tls -w
 curl -s https://$APP_HOST/ | grep version                 # no -k: trusted!
+curl -sv https://$APP_HOST/ 2>&1 | grep -i "issuer:"      # O=Let's Encrypt (no STAGING)
 ```
 
 ## Step 6 – Redirect HTTP to HTTPS
