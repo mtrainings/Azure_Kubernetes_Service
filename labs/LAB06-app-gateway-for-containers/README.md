@@ -50,7 +50,7 @@ az identity federated-credential create -g $RG --identity-name azure-alb-identit
 ## Step 3 – Install the ALB Controller
 
 ```bash
-helm install alb-controller oci://mcr.microsoft.com/application-lb/charts/alb-controller \
+helm upgrade --install alb-controller oci://mcr.microsoft.com/application-lb/charts/alb-controller \
   --namespace azure-alb-system --create-namespace \
   --version $ALB_CONTROLLER_VERSION \
   --set albController.namespace=azure-alb-system \
@@ -125,7 +125,7 @@ kubectl -n alb-infra delete applicationloadbalancer alb-cloudcart     # controll
 
 | Symptom | Likely cause |
 |---|---|
-| init container `init-alb-controller-crds` in `BackOff` | Gateway API CRDs are AKS-managed – reinstall with `helm upgrade … --reuse-values --set albController.installGatewayApiCRDs=false` |
+| init container `init-alb-controller-crds` in `BackOff` | Gateway API CRDs are AKS-managed – rerun the Step 3 command (`helm upgrade --install` updates the existing release) |
 | controller pods `CrashLoopBackOff`, auth errors | federated credential name/subject wrong, or workload identity not enabled on the cluster |
 | `ApplicationLoadBalancer` never `Deployment=True` | missing role assignment (Configuration Manager / Network Contributor), subnet not delegated or too small |
 | Gateway without address | annotations `alb-namespace` / `alb-name` don't match the ApplicationLoadBalancer |

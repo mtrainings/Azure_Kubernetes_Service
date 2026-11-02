@@ -40,7 +40,7 @@ curl -s http://$APP_HOST/ | grep version
 ## Step 2 – Install cert-manager
 
 ```bash
-helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+helm upgrade --install cert-manager oci://quay.io/jetstack/charts/cert-manager \
   --version $CERT_MANAGER_VERSION \
   --namespace cert-manager --create-namespace \
   --set crds.enabled=true \
