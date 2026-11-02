@@ -2,7 +2,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --omit=dev
+# mkdir: the directory must exist for the COPY below, even when there are no dependencies
+RUN npm install --omit=dev && mkdir -p node_modules
 
 FROM node:22-alpine
 ENV NODE_ENV=production PORT=8080
