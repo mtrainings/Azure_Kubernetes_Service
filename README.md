@@ -1,68 +1,77 @@
-# Kubernetes on Azure (AKS) - Practice Labs
+# Kubernetes on Microsoft Azure (AKS) – Hands-on Labs
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![alt text](images/1630686924911.png)
+![AKS](images/1630686924911.png)
 
-## Introduction
+Fifteen labs that take **CloudCart**, a small online-shop API, from a container image to a secured, observable, GitOps-managed application on Azure Kubernetes Service. One cluster is created in LAB02 and reused until the end – each lab adds a layer.
 
-Welcome to the Azure Kubernetes Service (AKS) practice labs! This repository contains hands-on exercises to help you learn and master various aspects of deploying and managing Kubernetes clusters on Azure. Feel free to explore the different topics listed below:
+```mermaid
+flowchart LR
+  DEV[developer] -->|az acr build| ACR[Azure Container Registry]
+  U[users] --> GW[Gateway API<br/>App Routing / App Gateway for Containers]
+  GW --> APP[CloudCart pods<br/>AKS · Azure CNI Overlay + Cilium]
+  APP -->|workload identity| KV[Key Vault]
+  APP --> DISK[(Azure Disk / Files)]
+  ACR --> APP
+  GIT[(Git)] -->|Flux| APP
+  APP --> MON[Azure Monitor<br/>Container insights · Prometheus]
+```
 
-## Content
+## Labs
 
-### 1. [Dockerfile Build And Push to ACR](LAB01/Dockerfile_Build_And_Push_to_ACR.md)
-
-   Build a custom Docker image from a simple Node.js application and push it to Azure Container Registry (ACR).
-
-### 2. [Standard LoadBalancer](LAB02/Standard_Loadbalancer.md)
-
-   Dive deeper into LoadBalancer concepts, focusing on the standard configuration and its benefits for your AKS deployment.
-
-### 3. [Traffic from Internet](LAB03/Traffic_from_internet.md)
-
-   Learn how to manage and route traffic from the internet to your AKS cluster, ensuring seamless connectivity for your applications.
-
-### 4. [External Nginx Ingress Controller + Cert Manager](LAB04/External_Nginx_Ingress_Controller_Cert_Manager.md)
-
-   Implement an external Nginx Ingress Controller along with Cert Manager to manage SSL/TLS certificates, enhancing the security of your AKS applications.
-
-### 5. [External Application Gateway Ingress Controller](LAB05/External_ApplicationGateway_Ingress_Controller.md)
-
-   Explore the integration of the Azure Application Gateway Ingress Controller to efficiently manage ingress traffic in your AKS cluster.
-
-### 6. [Create AKS using CLI](LAB06/Create_AKS_using_CLI.md)
-
-   Master the creation of AKS clusters using the Azure Command-Line Interface (CLI), providing a hands-on experience in deploying Kubernetes on Azure.
-
-### 7. [AKS Authorization](LAB07/AKS_Authorization.md)
-
-   Understand and implement role-based access control (RBAC) in AKS, ensuring secure access and permissions for users and applications.
-
-### 8. [AKS + Azure AD](LAB08/AKS_Azure_AD.md)
-
-   Integrate AKS with Azure Active Directory (AD), enabling seamless authentication and authorization for your Kubernetes workloads.
-
-### 9. [Users in AKS](LAB09/Users_in_AKS.md)
-
-   Explore user management within AKS, including creating and managing user accounts, providing a comprehensive understanding of identity and access management.
-
-### 10. [Dynamic Volumes](LAB10/Dynamic_volumes.md)
-
-   Dive into the dynamic provisioning of volumes in AKS, understanding how to efficiently manage storage for your containerized applications.
+| # | Lab | You will… | Time |
+|---|---|---|---|
+| 01 | [Containers & ACR](labs/LAB01-containers-acr/README.md) | build a secure image with ACR Tasks | 30 min |
+| 02 | [Create AKS](labs/LAB02-create-aks/README.md) | create the course cluster with the CLI, deploy from ACR, node pools | 45 min |
+| 03 | [Services & load balancers](labs/LAB03-services-load-balancers/README.md) | public/internal LB, static IP + DNS label, egress IP | 35 min |
+| 04 | [Gateway API](labs/LAB04-gateway-api/README.md) | App Routing (Istio-based) Gateway, path routing, canary | 40 min |
+| 05 | [TLS with cert-manager](labs/LAB05-tls-cert-manager/README.md) | Let's Encrypt certificates on the Gateway, HTTPS redirect | 40 min |
+| 06 | [App Gateway for Containers](labs/LAB06-app-gateway-for-containers/README.md) | ALB Controller, managed AGC, traffic split | 45 min |
+| 07 | [Network policies](labs/LAB07-network-policies/README.md) | zero trust between pods with Cilium | 35 min |
+| 08 | [Kubeconfig, users & RBAC](labs/LAB08-kubeconfig-users-rbac/README.md) | local accounts, certificate users, Roles and bindings | 35 min |
+| 09 | [Entra ID & Azure RBAC](labs/LAB09-entra-id-azure-rbac/README.md) | Entra authentication, Azure RBAC per namespace, disable local accounts | 40 min |
+| 10 | [Workload Identity & Key Vault](labs/LAB10-workload-identity-keyvault/README.md) | secretless access to Azure, Secrets Store CSI driver | 40 min |
+| 11 | [Storage](labs/LAB11-storage/README.md) | Azure Disk StatefulSet, volume expansion, shared Azure Files | 35 min |
+| 12 | [Monitoring & autoscaling](labs/LAB12-monitoring-autoscaling/README.md) | Container insights, control-plane logs, HPA, cluster autoscaler, KQL | 45 min |
+| 13 | [GitOps with Flux](labs/LAB13-gitops-flux/README.md) | Flux extension, reconcile from Git, drift healing | 40 min |
+| 14 | [CI/CD pipeline](labs/LAB14-cicd-pipeline/README.md) | Azure DevOps or GitHub Actions → ACR → Helm → AKS, secretless | 45 min |
+| 15 | [Troubleshooting](labs/LAB15-troubleshooting/README.md) | eight broken workloads, scored automatically | 40 min |
 
 ## Prerequisites
 
-- **Azure Account**: Ensure you have an active Azure account. If you don't have one, you can [create a free account](https://azure.microsoft.com/free/) before proceeding.
+- An Azure subscription where you are **Owner** of a resource group (role assignments are part of the labs) and quota for ~8 vCPUs in the chosen region (LAB02 shows how to pick a VM size your subscription allows)
+- **Azure Cloud Shell (Bash)** – recommended, everything is pre-installed – or locally: Azure CLI 2.70+, `kubectl`, `kubelogin`, `helm` 3, `git`, `envsubst` (`gettext-base`), `openssl`
+- LAB09: an Entra ID group for cluster admins (or permission to create one) and a lab partner
+- LAB13/14: a GitHub account (public fork) or an Azure DevOps project
 
-- **Azure CLI**: Install the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) on your local machine to interact with Azure services from the command line.
+## Getting started
 
-- **kubectl**: Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) on your machine to manage Kubernetes clusters.
+```bash
+git clone <this repository> aks-labs && cd aks-labs
+source env.sh          # in every new shell - sets RG, CLUSTER, ACR, KV, LOCATION ...
+```
 
-- **Git**: Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) to clone this repository and access the practice labs.
+Override defaults before sourcing, e.g. `LOCATION=northeurope NODE_SIZE=Standard_D2as_v5 source env.sh`.
+
+## Cost
+
+The lab cluster (3 × D2s_v5 at peak), ACR Basic, Key Vault and Log Analytics cost a few euros per day. Stop the cluster overnight (`az aks stop -g $RG -n $CLUSTER`) and delete everything at the end:
+
+```bash
+az group delete -n $RG --yes --no-wait
+```
+
+## Repository layout
+
+```
+app/              CloudCart API (Node.js 22) + Dockerfile
+labs/LABnn-*/     instructions and manifests per lab
+charts/cloudcart/ Helm chart used by the CI/CD lab
+gitops/           Flux-managed configuration (LAB13)
+pipelines/        Azure DevOps and GitHub Actions pipelines (LAB14)
+break-fix/        LAB15 scenarios and scoring script
+env.sh            lab variables
+```
 
 ## License
 
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
-
-## Contribution
-
-Feel free to clone this repository and work through the exercises at your own pace. Each directory contains a detailed README.md file with instructions to guide you through the lab. Happy learning and happy Kuberneting on Azure! 🚀
+MIT – see [LICENSE](LICENSE).

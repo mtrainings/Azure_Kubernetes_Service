@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudcart-static
+  namespace: cloudcart
+  annotations:
+    service.beta.kubernetes.io/azure-pip-name: ${PIP_NAME}
+    service.beta.kubernetes.io/azure-dns-label-name: ${DNS_LABEL}
+spec:
+  type: LoadBalancer
+  selector:
+    app: cloudcart-api
+  ports:
+    - port: 80
+      targetPort: 8080

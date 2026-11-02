@@ -1,0 +1,58 @@
+# Gateway pods (created by the Gateway API implementation) accept traffic from anywhere
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-ingress
+  namespace: cloudcart
+spec:
+  podSelector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: cloudcart-gw
+  policyTypes:
+    - Ingress
+  ingress:
+    - {}
+---
+# API pods accept port 8080 only from the gateway pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-from-gateway
+  namespace: cloudcart
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: [cloudcart-api, cloudcart-v2]
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              gateway.networking.k8s.io/gateway-name: cloudcart-gw
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# cert-manager HTTP-01 solver pods must be reachable through the gateway (certificate renewals!)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-acme-solver
+  namespace: cloudcart
+spec:
+  podSelector:
+    matchLabels:
+      acme.cert-manager.io/http01-solver: "true"
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              gateway.networking.k8s.io/gateway-name: cloudcart-gw
+      ports:
+        - protocol: TCP
+          port: 8089

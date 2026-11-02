@@ -1,0 +1,258 @@
+# LAB15 - eight broken workloads in the namespace "bf". Deploy with ./break-fix/deploy.sh
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bf
+---
+# BF1 - "The new release never starts"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bf1-release
+  namespace: bf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: bf1-release}
+  template:
+    metadata:
+      labels: {app: bf1-release}
+    spec:
+      containers:
+        - name: api
+          image: ${ACR}.azurecr.io/cloudcart:1.O
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+---
+# BF2 - "The pod restarts every few seconds"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bf2-restarts
+  namespace: bf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: bf2-restarts}
+  template:
+    metadata:
+      labels: {app: bf2-restarts}
+    spec:
+      containers:
+        - name: api
+          image: ${ACR}.azurecr.io/cloudcart:1.0
+          command: ["node", "app.js"]
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+---
+# BF3 - "The pod has been Pending since yesterday"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bf3-pending
+  namespace: bf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: bf3-pending}
+  template:
+    metadata:
+      labels: {app: bf3-pending}
+    spec:
+      containers:
+        - name: api
+          image: ${ACR}.azurecr.io/cloudcart:1.0
+          resources:
+            requests: {cpu: "6", memory: 64Mi}
+---
+# BF4 - "The Service exists, but nobody answers"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bf4-api
+  namespace: bf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: bf4-api}
+  template:
+    metadata:
+      labels: {app: bf4-api}
+    spec:
+      containers:
+        - name: api
+          image: ${ACR}.azurecr.io/cloudcart:1.0
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bf4-api
+  namespace: bf
+spec:
+  selector:
+    app: bf4-backend
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+# BF5 - "Running, but READY 0/1 forever"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bf5-notready
+  namespace: bf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: bf5-notready}
+  template:
+    metadata:
+      labels: {app: bf5-notready}
+    spec:
+      containers:
+        - name: api
+          image: ${ACR}.azurecr.io/cloudcart:1.0
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 9090
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+---
+# BF6 - "The database volume never shows up"
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bf6-data
+  namespace: bf
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: managed-csi-premum
+  resources:
+    requests:
+      storage: 4Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bf6-db
+  namespace: bf
+spec:
+  containers:
+    - name: db
+      image: ${ACR}.azurecr.io/cloudcart:1.0
+      volumeMounts:
+        - name: data
+          mountPath: /data
+      resources:
+        requests: {cpu: 20m, memory: 32Mi}
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: bf6-data
+---
+# BF7 - "The inventory job fails: forbidden"
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bf7-lister
+  namespace: bf
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: bf7-pod-reader
+  namespace: bf
+rules:
+  - apiGroups: [""]
+    resources: ["pod"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bf7-pod-reader
+  namespace: bf
+subjects:
+  - kind: ServiceAccount
+    name: bf7-lister
+    namespace: bf
+roleRef:
+  kind: Role
+  name: bf7-pod-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bf7-inventory
+  namespace: bf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: bf7-inventory}
+  template:
+    metadata:
+      labels: {app: bf7-inventory}
+    spec:
+      serviceAccountName: bf7-lister
+      containers:
+        - name: inventory
+          image: curlimages/curl:8.11.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              SA=/var/run/secrets/kubernetes.io/serviceaccount
+              while true; do
+                curl -s -o /dev/null -w "list pods: HTTP %{http_code}\n" --cacert $SA/ca.crt \
+                  -H "Authorization: Bearer $(cat $SA/token)" \
+                  https://kubernetes.default.svc/api/v1/namespaces/bf/pods
+                sleep 10
+              done
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+---
+# BF8 - "The app can't find any other service by name"
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bf8-lockdown
+  namespace: bf
+spec:
+  podSelector:
+    matchLabels:
+      app: bf8-client
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: bf4-api
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bf8-client
+  namespace: bf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: bf8-client}
+  template:
+    metadata:
+      labels: {app: bf8-client}
+    spec:
+      containers:
+        - name: client
+          image: curlimages/curl:8.11.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - while true; do curl -s -m 3 -o /dev/null -w "%{http_code}\n" http://bf4-api.bf.svc.cluster.local/ || echo FAIL; sleep 5; done
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}

@@ -1,0 +1,10 @@
+{
+  "name": "cloudcart-api",
+  "version": "1.0.0",
+  "description": "CloudCart demo API for the AKS labs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}

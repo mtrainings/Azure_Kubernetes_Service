@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: alb-infra
+---
+# Managed deployment: the ALB Controller creates the Application Gateway for Containers resource
+apiVersion: alb.networking.azure.io/v1
+kind: ApplicationLoadBalancer
+metadata:
+  name: alb-cloudcart
+  namespace: alb-infra
+spec:
+  associations:
+    - ${ALB_SUBNET_ID}

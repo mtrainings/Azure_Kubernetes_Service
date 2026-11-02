@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: cloudcart-gitops-quota
+  namespace: cloudcart-gitops
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    pods: "10"

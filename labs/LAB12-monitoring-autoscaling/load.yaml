@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load
+  namespace: cloudcart
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: load
+  template:
+    metadata:
+      labels:
+        app: load
+        # lab shortcut: reuse the gateway label so the LAB07 network policy lets us in
+        gateway.networking.k8s.io/gateway-name: cloudcart-gw
+    spec:
+      containers:
+        - name: load
+          image: curlimages/curl:8.11.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - while true; do curl -s -o /dev/null "http://cloudcart-api/burn?ms=150"; done
+          resources:
+            requests:
+              cpu: 20m
+              memory: 16Mi

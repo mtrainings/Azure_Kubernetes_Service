@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudcart-v2
+  namespace: cloudcart
+  labels:
+    app: cloudcart-v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudcart-v2
+  template:
+    metadata:
+      labels:
+        app: cloudcart-v2
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000          # numeric UID of the "node" user - required to verify non-root
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: ${ACR}.azurecr.io/cloudcart:2.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_VERSION
+              value: "2.0"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudcart-v2
+  namespace: cloudcart
+spec:
+  selector:
+    app: cloudcart-v2
+  ports:
+    - port: 80
+      targetPort: 8080

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kv-cli
+  namespace: cloudcart
+  labels:
+    azure.workload.identity/use: "true"     # the webhook injects token + AZURE_* env vars
+spec:
+  serviceAccountName: cloudcart-sa
+  restartPolicy: Never
+  containers:
+    - name: az
+      image: mcr.microsoft.com/azure-cli:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          az login --service-principal -u "$AZURE_CLIENT_ID" -t "$AZURE_TENANT_ID" \
+            --federated-token "$(cat $AZURE_FEDERATED_TOKEN_FILE)" --allow-no-subscriptions -o none &&
+          echo "Logged in as workload identity $AZURE_CLIENT_ID" &&
+          az keyvault secret show --vault-name ${KV} -n db-password --query value -o tsv
