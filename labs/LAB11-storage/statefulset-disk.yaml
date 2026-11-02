@@ -28,6 +28,8 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000          # numeric UID of the "node" user - required to verify non-root
+        runAsGroup: 1000
         fsGroup: 1000                    # the 'node' user can write to the disk
       containers:
         - name: api

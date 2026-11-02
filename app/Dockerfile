@@ -10,7 +10,8 @@ ENV NODE_ENV=production PORT=8080
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY server.js package.json ./
-USER node
+# numeric UID of the built-in "node" user - lets Kubernetes verify runAsNonRoot
+USER 1000:1000
 EXPOSE 8080
 HEALTHCHECK CMD wget -qO- http://localhost:8080/healthz || exit 1
 CMD ["node", "server.js"]

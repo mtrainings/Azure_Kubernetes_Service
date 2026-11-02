@@ -93,10 +93,10 @@ What lives there? (VM scale set, load balancer, public IP for egress, managed id
 
 ```bash
 envsubst < labs/LAB02-create-aks/cloudcart.yaml | kubectl apply -f -
-kubectl -n cloudcart rollout status deploy/cloudcart-api
+kubectl -n cloudcart rollout status deploy/cloudcart-api --timeout=120s
 kubectl -n cloudcart get pods -o wide
-kubectl -n cloudcart port-forward svc/cloudcart-api 8080:80 &
-curl -s localhost:8080; kill %1
+kubectl -n cloudcart port-forward svc/cloudcart-api 18080:80 &    # 8080 is used by Cloud Shell itself
+sleep 2; curl -s localhost:18080; kill %1
 ```
 
 ✅ **Checkpoint:** JSON with `"version": "1.0"` – the image was pulled from ACR **without** any `imagePullSecret`.

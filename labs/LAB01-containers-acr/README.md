@@ -35,7 +35,7 @@ Open `app/Dockerfile` and `app/server.js`. Note:
 
 - **multi-stage build** – dependencies installed in a build stage, runtime stage stays small
 - **pinned base image** `node:22-alpine` (an LTS release) instead of `latest`
-- **`USER node`** – the container doesn't run as root
+- **`USER 1000:1000`** – the container doesn't run as root. Use a **numeric** UID: with a user *name* Kubernetes can't verify `runAsNonRoot` and refuses to start the pod (`CreateContainerConfigError`)
 - `/healthz` and `/readyz` endpoints – used by Kubernetes probes in LAB02
 
 ## Step 4 – Build in Azure (no Docker needed)
